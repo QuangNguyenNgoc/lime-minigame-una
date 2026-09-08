@@ -69,15 +69,15 @@ F6:: {
 
 #HotIf isRecording
 
-~*w:: => OnKeyDown("w")
-~*a:: => OnKeyDown("a")
-~*s:: => OnKeyDown("s")
-~*d:: => OnKeyDown("d")
+~*w:: OnKeyDown("w")
+~*a:: OnKeyDown("a")
+~*s:: OnKeyDown("s")
+~*d:: OnKeyDown("d")
 
-~*w Up:: => OnKeyUp("w")
-~*a Up:: => OnKeyUp("a")
-~*s Up:: => OnKeyUp("s")
-~*d Up:: => OnKeyUp("d")
+~*w Up:: OnKeyUp("w")
+~*a Up:: OnKeyUp("a")
+~*s Up:: OnKeyUp("s")
+~*d Up:: OnKeyUp("d")
 
 #HotIf
 
