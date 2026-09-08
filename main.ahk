@@ -10,6 +10,9 @@
 DllCall("winmm\timeBeginPeriod", "UInt", 1)
 OnExit((*) => DllCall("winmm\timeEndPeriod", "UInt", 1))
 
+; === Mouse & Send mode ===
+SendMode("Event")
+
 ; === State ===
 global isRunning := false
 global isPaused := false
