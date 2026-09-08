@@ -156,9 +156,10 @@ RunPath() {
     Sleep(400)
 
     ; --- Go to Lime ---
-    Walk("s+d", 3610)
-    Walk("s", 1312)
-    Walk("d", 484)
+    Walk("s+d", 2031)
+    Walk("s", 2188)
+    Walk("d", 1391)
+    Sleep(100)
 
     ; --- Start minigame ---
     Send("{e}")
