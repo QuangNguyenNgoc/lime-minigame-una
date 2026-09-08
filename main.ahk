@@ -136,15 +136,24 @@ Collect(ms := 1500) {
 RunPath() {
     global isRunning
 
+    ; === SETUP ===
+    ; --- Reset character ---
+    Send("{Escape}")       ; ESC
+    Sleep(400)
+    Send("{r}")
+    Sleep(400)
+    Send("{Enter}")
+    Sleep(1000)
+
     ; --- Camera align ---
     MouseMove(47, 467, 3)
-    Sleep(220)
+    Sleep(400)
     Click("Left")
-    Sleep(220)
+    Sleep(400)
     MouseMove(382, 126, 3)
-    Sleep(220)
+    Sleep(400)
     Click("Left")
-    Sleep(220)
+    Sleep(400)
 
     ; --- Go to Lime ---
     Walk("s+d", 3610)
@@ -152,28 +161,45 @@ RunPath() {
     Walk("d", 484)
 
     ; --- Start minigame ---
-    SendInput("e")
-    Sleep(220)
+    Send("{e}")
+    Sleep(400)
     MouseMove(1000, 800, 3)
-    Sleep(220)
+    Sleep(400)
     Click("Left")
-    Sleep(220)
+    Sleep(400)
     MouseMove(1265, 940, 3)
-    Sleep(220)
+    Sleep(400)
     Click("Left")
-    Sleep(220)
+    Sleep(400)
     MouseMove(1000, 800, 3)
-    Sleep(220)
+    Sleep(400)
     Click("Left")
-    Sleep(220)
+    Sleep(400)
     MouseMove(737, 941, 3)
-    Sleep(220)
+    Sleep(400)
     Click("Left")
 
+    ; === START ===
+    ; --- Go to align place ---
+    Sleep(2000)
+    Walk("d", 5532)
+    Sleep(125)
+    Walk("s", 437)
+    Walk("a", 234)
+    Sleep(172)
+    Walk("w", 188)
+    Sleep(219)
+    Walk("s+Space", 157)
+    Walk("s", 234)
+    Sleep(203)
+    Walk("d", 656)
+    Sleep(1500)
+
+
     ; --- EXAMPLE: Spawn → Điểm A ---
-    ; Walk("w", 2200)          ; thẳng
+    ; Walk("w", 4000)          ; thẳng
     ; Walk("w+a", 800)         ; chéo trái
-    ; Walk("w", 600)           ; SLIDE: vào vách trái
+    ; Walk("w", 400)           ; SLIDE: vào vách trái
 
     ; --- EXAMPLE: Collect tại điểm A ---
     ; Collect(1500)
