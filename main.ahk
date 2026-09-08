@@ -151,6 +151,25 @@ RunPath() {
     Walk("s", 1312)
     Walk("d", 484)
 
+    ; --- Start minigame ---
+    SendInput("e")
+    Sleep(220)
+    MouseMove(1000, 800, 3)
+    Sleep(220)
+    Click("Left")
+    Sleep(220)
+    MouseMove(1265, 940, 3)
+    Sleep(220)
+    Click("Left")
+    Sleep(220)
+    MouseMove(1000, 800, 3)
+    Sleep(220)
+    Click("Left")
+    Sleep(220)
+    MouseMove(737, 941, 3)
+    Sleep(220)
+    Click("Left")
+
     ; --- EXAMPLE: Spawn → Điểm A ---
     ; Walk("w", 2200)          ; thẳng
     ; Walk("w+a", 800)         ; chéo trái
