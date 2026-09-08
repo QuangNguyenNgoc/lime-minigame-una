@@ -108,6 +108,11 @@ RunPath() {
     Click("Left")
     Sleep(220)
 
+    ; --- Go to Lime ---
+    Walk("s+d", 3610)
+    Walk("s", 1312)
+    Walk("d", 484)
+
     ; --- EXAMPLE: Spawn → Điểm A ---
     ; Walk("w", 2200)          ; thẳng
     ; Walk("w+a", 800)         ; chéo trái
@@ -118,6 +123,6 @@ RunPath() {
 
     ; --- Kết thúc ---
     isRunning := false
-    ToolTip("✅ Path complete")
+    ToolTip("Path complete")
     SetTimer(() => ToolTip(), -3000)
 }
