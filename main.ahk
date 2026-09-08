@@ -40,6 +40,11 @@ F2:: {
 }
 
 F3:: {
+    global isRunning, isPaused
+    isRunning := false
+    isPaused := false
+    ; Release tất cả key để tránh bị kẹt
+    Send("{w up}{a up}{s up}{d up}{e up}")
     ToolTip("⏹ Stopped")
     SetTimer(() => ToolTip(), -1000)
     Reload
@@ -53,14 +58,38 @@ F3:: {
  * @param ms    Thời gian giữ (milliseconds)
  */
 Walk(keys, ms) {
-    global isPaused
-    while isPaused
-        Sleep(50)
-
+    global isPaused, isRunning
     keyList := StrSplit(keys, "+")
+
+    ; Press keys
     for k in keyList
         Send("{" k " down}")
-    Sleep(ms)
+
+    ; Dùng A_TickCount để đo thời gian chính xác, không bị drift
+    startTick := A_TickCount
+    while (A_TickCount - startTick) < ms {
+        if !isRunning {
+            for k in keyList
+                Send("{" k " up}")
+            return
+        }
+        if isPaused {
+            pauseTick := A_TickCount
+            for k in keyList
+                Send("{" k " up}")
+            while isPaused && isRunning
+                Sleep(50)
+            if !isRunning
+                return
+            ; Bù thời gian pause vào startTick
+            startTick += A_TickCount - pauseTick
+            for k in keyList
+                Send("{" k " down}")
+        }
+        Sleep(10)
+    }
+
+    ; Release keys
     for k in keyList
         Send("{" k " up}")
     Sleep(50)  ; micro-gap giữa các segment
@@ -72,12 +101,12 @@ Walk(keys, ms) {
  * @param ms  Tổng thời gian collect (milliseconds), mặc định 1500
  */
 Collect(ms := 1500) {
-    global isPaused
-    while isPaused
-        Sleep(50)
+    global isPaused, isRunning
 
     ; Zoom out nhanh
     Loop 5 {
+        if !isRunning
+            return
         Send("{WheelDown}")
         Sleep(30)
     }
@@ -86,6 +115,12 @@ Collect(ms := 1500) {
     ; Spam E
     elapsed := 0
     while elapsed < ms {
+        if !isRunning
+            return
+        while isPaused && isRunning
+            Sleep(50)
+        if !isRunning
+            return
         Send("{e}")
         Sleep(200)
         elapsed += 200
