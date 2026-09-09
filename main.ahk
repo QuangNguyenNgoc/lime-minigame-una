@@ -10,8 +10,10 @@
 DllCall("winmm\timeBeginPeriod", "UInt", 1)
 OnExit((*) => DllCall("winmm\timeEndPeriod", "UInt", 1))
 
-; === Mouse & Send mode ===
+; === Mouse, Pixel & Send mode ===
 SendMode("Event")
+CoordMode("Pixel", "Client")
+CoordMode("Mouse", "Client")
 
 ; === State ===
 global isRunning := false
@@ -89,11 +91,12 @@ F3:: {
 
 /**
  * Walk — giữ key combo trong ms milliseconds rồi release.
- * @param keys  Chuỗi phím, ví dụ: "w", "w+a", "a+s"
- * @param ms    Thời gian giữ (milliseconds)
+ * @param keys    Chuỗi phím, ví dụ: "w", "w+a", "a+s"
+ * @param ms      Thời gian giữ (milliseconds)
+ * @param stepId  (Tuỳ chọn) Đánh dấu ID của luống để Ghi log
  */
-Walk(keys, ms) {
-    global isPaused, isRunning
+Walk(keys, ms, stepId := 0) {
+    global isPaused, isRunning, Config
     keyList := StrSplit(keys, "+")
 
     ; Press keys
@@ -108,6 +111,8 @@ Walk(keys, ms) {
                 Send("{" k " up}")
             return
         }
+
+        ; Xử lý Tạm Dừng (Pause)
         if isPaused {
             pauseTick := A_TickCount
             for k in keyList
@@ -121,6 +126,30 @@ Walk(keys, ms) {
             for k in keyList
                 Send("{" k " down}")
         }
+
+        ; === RADAR CHUNK ===
+        if (CheckRadar()) {
+            ; 1. Nhả phím để thắng gấp
+            for k in keyList
+                Send("{" k " up}")
+
+            LogAction("Radar [XANH] - Phát hiện tại Step " stepId)
+
+            ; 2. Đóng băng đồng hồ bấm giờ của quãng đường
+            pauseTick := A_TickCount
+
+            ; 3. Gọi Quy trình Nhặt đồ (Sẽ hoàn thiện ở bước sau)
+            DoSpamE_And_GiveUp(stepId)
+
+            ; 4. (Tạm thời) Sau khi xử lý xong, bấm phím chạy tiếp phần đường còn lại
+            if !isRunning
+                return
+            startTick += A_TickCount - pauseTick
+            for k in keyList
+                Send("{" k " down}")
+        }
+        ; ===================
+
         Sleep(10)
     }
 
@@ -128,6 +157,34 @@ Walk(keys, ms) {
     for k in keyList
         Send("{" k " up}")
     Sleep(50)  ; micro-gap giữa các segment
+
+    if (stepId > 0)
+        LogAction("Step " stepId ": none")
+}
+
+/**
+ * CheckRadar - Quét tìm Pixel màu xanh lá đậm dựa trên Config
+ * Trả về True nếu thấy, False nếu không.
+ */
+CheckRadar() {
+    global Config
+    ; Lấy kích thước cửa sổ Roblox hiện tại
+    WinGetClientPos(&x, &y, &w, &h, "A")
+
+    ; Quét toàn bộ vùng Client của game tìm màu TargetColor
+    found := PixelSearch(&outX, &outY, 0, 0, w, h, Config.TargetColor, Config.ColorVar)
+
+    return found
+}
+
+/**
+ * Hàm xử lý Nhặt đồ (Sẽ hoàn thiện ở bước tiếp theo)
+ */
+DoSpamE_And_GiveUp(stepId) {
+    global Config
+    ; TODO: Spam E
+    ; TODO: Click nút Give Up
+    Sleep(1000) ; Tạm thời chờ 1 giây
 }
 
 /**
