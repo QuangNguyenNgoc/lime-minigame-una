@@ -1,6 +1,14 @@
 #Requires AutoHotkey v2.0
 #Include "%A_ScriptDir%\lib\Gdip_All.ahk"
 
+; --- CẤU HÌNH VÙNG CHỤP (ROI) ---
+global roiX := 210     ; Cách lề trái màn hình
+global roiY := 110      ; Cách lề trên màn hình
+global roiW := 1710    ; Chiều rộng ảnh
+global roiH := 835     ; Chiều cao ảnh
+global roiString := roiX "|" roiY "|" roiW "|" roiH
+; --------------------------------
+
 ; Khởi tạo GDI+
 global pToken := Gdip_Startup()
 if !pToken {
@@ -12,35 +20,47 @@ OnExit(CleanUp)
 CleanUp(ExitReason, ExitCode) {
     Gdip_Shutdown(pToken)
 }
-; 227, 67 (điểm bắt đầu, X, Y)
-; 227, 927
-; 1919,927
+
+; --- TẠO KHUNG NGẮM (BORDER) ---
+global borderGui := Gui("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x20")
+borderGui.BackColor := "White" ; Màu viền trắng
+
+t := 3 ; Độ dày viền
+iw := roiW - (2 * t)
+ih := roiH - (2 * t)
+
+; Tạo một khối màu Fuchsia ở giữa làm "ruột"
+borderGui.Add("Text", "x" t " y" t " w" iw " h" ih " BackgroundFuchsia")
+
+; Lệnh này sẽ làm "bốc hơi" toàn bộ màu Fuchsia thành rỗng ruột (xuyên thấu),
+; Số 120 là độ trong suốt của phần viền trắng còn lại (thang đo 0-255)
+WinSetTransColor("Fuchsia 120", borderGui.Hwnd)
+
+borderGui.Show("NA x" roiX " y" roiY " w" roiW " h" roiH)
 
 ; Nhấn phím 3 để chụp 1 tấm ảnh
 3:: {
-    ; --- CẤU HÌNH VÙNG CHỤP (ROI) ---
-    ; Dùng công cụ "Window Spy" của AHK
-    roiX := 227     ; Cách lề trái màn hình
-    roiY := 67     ; Cách lề trên màn hình
-    roiW := 1692    ; Chiều rộng ảnh muốn chụp
-    roiH := 860     ; Chiều cao ảnh muốn chụp
-    roiString := roiX "|" roiY "|" roiW "|" roiH
-    ; --------------------------------
+    ; 1. Ẩn khung ngắm đi để không dính vào ảnh
+    borderGui.Hide()
+    Sleep(50) ; Chờ Windows render lại màn hình game cho sạch
 
     ; Tạo thư mục map_capture nếu chưa có
     folderPath := A_ScriptDir "\data\map_capture"
     if !DirExist(folderPath)
         DirCreate(folderPath)
 
-    ; Đặt tên file theo mốc thời gian để không bị trùng
+    ; Đặt tên file theo mốc thời gian
     fileName := folderPath "\capture_" A_Now "_" A_MSec ".png"
 
-    ; Chụp và lưu ảnh
+    ; 2. Chụp và lưu ảnh
     pBitmap := Gdip_BitmapFromScreen(roiString)
     Gdip_SaveBitmapToFile(pBitmap, fileName)
-    Gdip_DisposeImage(pBitmap) ; Giải phóng RAM lập tức
+    Gdip_DisposeImage(pBitmap) ; Giải phóng RAM
 
-    ToolTip("Đã chụp: capture_" A_Now "_" A_MSec ".png", 0, 0)
+    ; 3. Hiện khung ngắm lại ngay lập tức
+    borderGui.Show("NA")
+
+    ToolTip("📸 Đã chụp: capture_" A_Now "_" A_MSec ".png", 0, 0)
     SetTimer(() => ToolTip(), -2000) ; Tắt tooltip sau 2s
 }
 
