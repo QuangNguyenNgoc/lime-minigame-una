@@ -192,7 +192,7 @@ AlignCameraTopDown() {
     Sleep(200)
 
     ; Bước 3: Lăn chuột ngược ra 4 nấc
-    Loop 4 {
+    Loop 8 {
         if !isRunning
             return
         Send("{WheelDown}")
