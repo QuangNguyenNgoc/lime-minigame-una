@@ -1,6 +1,30 @@
 #Requires AutoHotkey v2.0
 
 SendMode("Event")
+CoordMode("Pixel", "Client")
+CoordMode("Mouse", "Client")
+
+global Config := {}
+
+LoadConfig()
+
+LoadConfig() {
+    global Config
+    iniPath := A_ScriptDir "\config.ini"
+
+    if !FileExist(iniPath) {
+        MsgBox("Không tìm thấy config.ini. Vui lòng tạo hoặc copy từ thư mục gốc.")
+        ExitApp
+    }
+
+    ; Đọc [Radar]
+    Config.TargetColor := IniRead(iniPath, "Radar", "TargetColor", "0x00FF00")
+    Config.ColorVar := Integer(IniRead(iniPath, "Radar", "ColorVariation", "10"))
+    Config.RadarX := Integer(IniRead(iniPath, "Radar", "ScanX", "400"))
+    Config.RadarY := Integer(IniRead(iniPath, "Radar", "ScanY", "200"))
+    Config.RadarW := Integer(IniRead(iniPath, "Radar", "ScanW", "800"))
+    Config.RadarH := Integer(IniRead(iniPath, "Radar", "ScanH", "400"))
+}
 
 1:: {
     ; Tự động Focus vào game nếu cần (tuỳ chọn)
@@ -35,4 +59,15 @@ SendMode("Event")
 
     ToolTip("[v] Đã căn chỉnh Camera hoàn tất!")
     SetTimer(() => ToolTip(), -2000)
+}
+
+2:: {
+    global Config
+    if (PixelSearch(&outX, &outY, Config.RadarX, Config.RadarY, Config.RadarX + Config.RadarW, Config.RadarY + Config.RadarH, Config.TargetColor, Config.ColorVar)
+    ) {
+        MsgBox("Đã tìm thấy màu xanh tại: " outX ", " outY)
+    }
+    else {
+        MsgBox("Not found!")
+    }
 }
