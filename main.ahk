@@ -16,6 +16,41 @@ SendMode("Event")
 ; === State ===
 global isRunning := false
 global isPaused := false
+global Config := {}
+
+; Nạp cấu hình ngay khi khởi động
+LoadConfig()
+
+; === Functions ===
+
+LoadConfig() {
+    global Config
+    iniPath := A_ScriptDir "\config.ini"
+
+    if !FileExist(iniPath) {
+        MsgBox("Không tìm thấy config.ini. Vui lòng tạo hoặc copy từ thư mục gốc.")
+        ExitApp
+    }
+
+    ; Đọc [Features]
+    Config.Logging := Integer(IniRead(iniPath, "Features", "EnableLogging", "1"))
+    Config.Capture := Integer(IniRead(iniPath, "Features", "EnableCapture", "1"))
+    Config.Debug := Integer(IniRead(iniPath, "Features", "EnableDebug", "0"))
+
+    ; Đọc [Radar]
+    Config.GiveUpX := Integer(IniRead(iniPath, "Radar", "GiveUpX", "500"))
+    Config.GiveUpY := Integer(IniRead(iniPath, "Radar", "GiveUpY", "500"))
+    Config.TargetColor := IniRead(iniPath, "Radar", "TargetColor", "0x00FF00")
+    Config.ColorVar := Integer(IniRead(iniPath, "Radar", "ColorVariation", "10"))
+}
+
+LogAction(msg) {
+    global Config
+    if (Config.Logging) {
+        logLine := "[" A_YYYY "-" A_MM "-" A_DD " " A_Hour ":" A_Min ":" A_Sec "] " msg "`n"
+        FileAppend(logLine, A_ScriptDir "\log.txt")
+    }
+}
 
 ; === Hotkeys ===
 
