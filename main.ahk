@@ -162,6 +162,46 @@ Collect(ms := 1500) {
     }
 }
 
+/**
+ * AlignCameraTopDown — Chỉnh camera về góc nhìn từ trên xuống (Góc nhìn thứ 1 -> Cúi xuống -> Lăn ra)
+ */
+AlignCameraTopDown() {
+    global isRunning
+    if !isRunning
+        return
+
+    ; Bước 1: Lăn chuột vào Góc nhìn thứ nhất (First-person)
+    Loop 20 {
+        if !isRunning
+            return
+        Send("{WheelUp}")
+        Sleep(20)
+    }
+    Sleep(200)
+
+    ; Bước 2: Kéo chuột nhìn thẳng xuống đất bằng DllCall
+    Click("Right Down")
+    Sleep(100)
+    Loop 40 { ; Để 40 cho chắc chắn ép góc chạm đáy
+        if !isRunning
+            break
+        DllCall("mouse_event", "UInt", 1, "Int", 0, "Int", 20, "UInt", 0, "UPtr", 0)
+        Sleep(15)
+    }
+    Click("Right Up")
+    Sleep(200)
+
+    ; Bước 3: Lăn chuột ngược ra 4 nấc
+    Loop 4 {
+        if !isRunning
+            return
+        Send("{WheelDown}")
+        Sleep(50)
+    }
+
+    LogAction("Setup: Đã căn chỉnh Camera Top-Down.")
+}
+
 ; === Path Flow ===
 
 /**
@@ -189,6 +229,7 @@ RunPath() {
     Sleep(400)
     Click("Left")
     Sleep(400)
+    AlignCameraTopDown()
 
     ; --- Go to Lime ---
     Walk("s+d", 2031)
