@@ -1,11 +1,6 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
-; ============================================
-; Sol RNG Auto-Path Tool
-; Hotkeys: F1 Start | F2 Pause/Resume | F3 Stop
-; ============================================
-
 ; === Timing precision ===
 DllCall("winmm\timeBeginPeriod", "UInt", 1)
 OnExit((*) => DllCall("winmm\timeEndPeriod", "UInt", 1))
@@ -44,6 +39,10 @@ LoadConfig() {
     Config.GiveUpY := Integer(IniRead(iniPath, "Radar", "GiveUpY", "500"))
     Config.TargetColor := IniRead(iniPath, "Radar", "TargetColor", "0x00FF00")
     Config.ColorVar := Integer(IniRead(iniPath, "Radar", "ColorVariation", "10"))
+    Config.RadarX := Integer(IniRead(iniPath, "Radar", "ScanX", "400"))
+    Config.RadarY := Integer(IniRead(iniPath, "Radar", "ScanY", "200"))
+    Config.RadarW := Integer(IniRead(iniPath, "Radar", "ScanW", "800"))
+    Config.RadarH := Integer(IniRead(iniPath, "Radar", "ScanH", "400"))
 }
 
 LogAction(msg) {
@@ -87,6 +86,19 @@ F3:: {
     Reload
 }
 
+; === Debug Hotkeys ===
+
+3:: {
+    global isRunning, spamETimerActive
+    ; Chỉ cho phép test khi đang chạy Walk (isRunning) và chưa bật Spam (để tránh lặp)
+    if (isRunning && !spamETimerActive) {
+        LogAction("[DEBUG] Nhấn phím 3: Ép buộc kích hoạt Spam Mode 12s!")
+        ToolTip("⚠️ FORCE SPAM MODE 12s!")
+        SetTimer(() => ToolTip(), -2000)
+        StartSpamMode()
+    }
+}
+
 ; === Helpers ===
 
 /**
@@ -96,7 +108,7 @@ F3:: {
  * @param stepId  (Tuỳ chọn) Đánh dấu ID của luống để Ghi log
  */
 Walk(keys, ms, stepId := 0) {
-    global isPaused, isRunning, Config
+    global isPaused, isRunning, Config, spamETimerActive
     keyList := StrSplit(keys, "+")
 
     ; Press keys
@@ -128,25 +140,16 @@ Walk(keys, ms, stepId := 0) {
         }
 
         ; === RADAR CHUNK ===
-        if (CheckRadar()) {
-            ; 1. Nhả phím để thắng gấp
-            for k in keyList
-                Send("{" k " up}")
+        ; Chỉ bật quét nếu chưa vào mode SpamE
+        if (!spamETimerActive && CheckRadar()) {
+            LogAction("Radar [XANH] - Phát hiện tại Step " stepId ". Bật chế độ Spam E 12s.")
 
-            LogAction("Radar [XANH] - Phát hiện tại Step " stepId)
+            if (Config.Capture) {
+                ; TODO: Chụp ảnh lưu lại (sẽ tích hợp Gdip sau)
+            }
 
-            ; 2. Đóng băng đồng hồ bấm giờ của quãng đường
-            pauseTick := A_TickCount
-
-            ; 3. Gọi Quy trình Nhặt đồ (Sẽ hoàn thiện ở bước sau)
-            DoSpamE_And_GiveUp(stepId)
-
-            ; 4. (Tạm thời) Sau khi xử lý xong, bấm phím chạy tiếp phần đường còn lại
-            if !isRunning
-                return
-            startTick += A_TickCount - pauseTick
-            for k in keyList
-                Send("{" k " down}")
+            ; Bật Timer Spam E đa luồng ảo (nhân vật vẫn tiếp tục đi theo pattern)
+            StartSpamMode()
         }
         ; ===================
 
@@ -162,61 +165,79 @@ Walk(keys, ms, stepId := 0) {
         LogAction("Step " stepId ": none")
 }
 
+; === RADAR & MULTITASKING LOGIC ===
+
+global spamETimerActive := false
+
 /**
- * CheckRadar - Quét tìm Pixel màu xanh lá đậm dựa trên Config
- * Trả về True nếu thấy, False nếu không.
+ * CheckRadar - Quét tìm Pixel trong vùng giới hạn (Bounding Box)
  */
 CheckRadar() {
     global Config
-    ; Lấy kích thước cửa sổ Roblox hiện tại
-    WinGetClientPos(&x, &y, &w, &h, "A")
-
-    ; Quét toàn bộ vùng Client của game tìm màu TargetColor
-    found := PixelSearch(&outX, &outY, 0, 0, w, h, Config.TargetColor, Config.ColorVar)
-
+    found := PixelSearch(&outX, &outY, Config.RadarX, Config.RadarY, Config.RadarX + Config.RadarW, Config.RadarY + Config.RadarH, Config.TargetColor, Config.ColorVar)
     return found
 }
 
 /**
- * Hàm xử lý Nhặt đồ (Sẽ hoàn thiện ở bước tiếp theo)
+ * Kích hoạt chế độ Vừa Đi Vừa Nhặt (Spam E)
  */
-DoSpamE_And_GiveUp(stepId) {
-    global Config
-    ; TODO: Spam E
-    ; TODO: Click nút Give Up
-    Sleep(1000) ; Tạm thời chờ 1 giây
+StartSpamMode() {
+    global spamETimerActive
+    if (spamETimerActive)
+        return
+
+    spamETimerActive := true
+    ; Bật luồng gõ phím E mỗi 100ms
+    SetTimer(TickSpamE, 100)
+
+    ; Đặt đồng hồ đếm ngược 12 giây (12000ms). Số âm nghĩa là chỉ chạy 1 lần.
+    SetTimer(StopSpamAndGiveUp, -12000)
 }
 
 /**
- * Collect — zoom out + spam E.
- * Scroll xuống để phóng nhỏ view, đồng thời spam E mỗi 200ms.
- * @param ms  Tổng thời gian collect (milliseconds), mặc định 1500
+ * Hàm được SetTimer gọi liên tục mỗi 100ms
  */
-Collect(ms := 1500) {
-    global isPaused, isRunning
-
-    ; Zoom out nhanh
-    Loop 5 {
-        if !isRunning
-            return
-        Send("{WheelDown}")
-        Sleep(30)
+TickSpamE() {
+    global isRunning, spamETimerActive
+    if (!isRunning || !spamETimerActive) {
+        SetTimer(TickSpamE, 0) ; Tắt timer nếu bị huỷ
+        return
     }
-    Sleep(100)
+    Send("{e}")
+}
 
-    ; Spam E
-    elapsed := 0
-    while elapsed < ms {
-        if !isRunning
-            return
-        while isPaused && isRunning
-            Sleep(50)
-        if !isRunning
-            return
-        Send("{e}")
-        Sleep(200)
-        elapsed += 200
-    }
+/**
+ * Hết 12s, tắt Spam E và nhấn nút Give Up mù
+ * Sau đó NGẮT TOÀN BỘ lộ trình và quay lại Loop đầu (Reset character)
+ */
+StopSpamAndGiveUp() {
+    global spamETimerActive, Config, isRunning
+    if (!isRunning)
+        return
+
+    spamETimerActive := false
+    SetTimer(TickSpamE, 0) ; Tắt timer gõ phím E
+
+    ; Bấm mù vào toạ độ nút Give Up
+    MouseMove(Config.GiveUpX, Config.GiveUpY, 0)
+    Sleep(50)
+    Click()
+    Sleep(50)
+
+    LogAction("Đã hết 12s Spam E. Nhấn Give Up. Cắt chu trình để quay lại từ đầu.")
+
+    ; Cắt hoàn toàn các Walk() đang chạy dở
+    isRunning := false
+
+    ; Đợi 1 giây cho an toàn rồi tự động gọi RunPath() lại từ đầu
+    SetTimer(AutoRestartMacro, -1000)
+}
+
+AutoRestartMacro() {
+    global isRunning
+    isRunning := true
+    LogAction("Tự động Restart RunPath()...")
+    RunPath()
 }
 
 /**
@@ -329,16 +350,7 @@ RunPath() {
     Walk("d", 656)
     Sleep(1500)
 
-
-    ; --- EXAMPLE: Spawn → Điểm A ---
-    ; Walk("w", 4000)          ; thẳng
-    ; Walk("w+a", 800)         ; chéo trái
-    ; Walk("w", 400)           ; SLIDE: vào vách trái
-
-    ; --- EXAMPLE: Collect tại điểm A ---
-    ; Collect(1500)
-
-    ; --- Kết thúc ---
+    ; --- KẾT THÚC ---
     isRunning := false
     ToolTip("Path complete")
     SetTimer(() => ToolTip(), -3000)
