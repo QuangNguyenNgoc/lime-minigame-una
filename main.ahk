@@ -467,12 +467,13 @@ RunPath() {
     Walk("a", 156)
     Walk("d+Space", 125)
     Walk("d", 600)
-    Walk("s", 281)
+    Walk("s", 281, 1)
 
-    Walk("d", 1330)
+    Walk("d", 1230)
     Walk("s", 579)
     Walk("a", 625)
-    Walk("w", 516, 2)
+    Walk("w", 625, 2)
+
     Walk("d", 4860)
     Walk("d+Space", 200)
     Walk("d", 1828, 3)
@@ -509,10 +510,6 @@ RunPath() {
     Walk("d", 700, 606)
     Walk("s", 4469, 105)
 
-    Walk("w", 172, 106)
-    Walk("a", 1375, 107)
-    Walk("s", 255, 108)
-
     Walk("w", 250, 109)
     Walk("a", 1156, 110)
     Walk("w", 797, 111)
@@ -527,7 +524,15 @@ RunPath() {
     Walk("s", 187)
     Walk("w+Space", 200)
     Walk("w", 577, 1001)
-    Walk("d", 2672, 1002)
+
+    Walk("d", 450)
+    Walk("w", 1625)
+    Walk("s", 578)
+    Walk("d", 547)
+    Walk("w", 641)
+    Walk("s", 1625)
+
+    Walk("d", 2300, 1002)
     Walk("s", 1109)
     Walk("a", 1000, 8)
 
