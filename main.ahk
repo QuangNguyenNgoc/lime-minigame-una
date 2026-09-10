@@ -607,8 +607,9 @@ RunPath() {
     Walk("a", 1390)
     Walk("w", 563)
     Walk("d", 1031)
-    Walk("a", 938)
-    Walk("a+Space", 156)
+    Walk("a", 1400)
+    Walk("d", 200)
+    Walk("a+Space", 200)
     Walk("a", 1499)
     Walk("w", 1080, 23)
 
