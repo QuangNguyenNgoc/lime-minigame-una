@@ -356,14 +356,14 @@ AlignCameraTopDown() {
  */
 VerifyMinigameState() {
     global Config
-    ; Search box around Give Up button based on user's manual config (W=25, H=15)
-    startX := 950
-    startY := 202
-    endX := 950 + 25
-    endY := 202 + 15
+    ; Mở rộng vùng tìm kiếm (200x100) quanh toạ độ GiveUpX/Y để đảm bảo bắt trúng toàn bộ nút
+    startX := Config.GiveUpX - 100
+    startY := Config.GiveUpY - 50
+    endX := Config.GiveUpX + 100
+    endY := Config.GiveUpY + 50
 
-    ; Use a generous variation (e.g., 50) for pure Red (0xFF0000)
-    found := PixelSearch(&outX, &outY, startX, startY, endX, endY, Config.GiveUpColor, 50)
+    ; Variation 70 để bắt mọi tone màu đỏ của nút Give Up (kể cả khi viền nhạt/sáng)
+    found := PixelSearch(&outX, &outY, startX, startY, endX, endY, Config.GiveUpColor, 70)
     return found
 }
 
@@ -433,11 +433,20 @@ RunPath() {
     ; === START ===
     enableRadar := true
 
-    ; --- Go to align place ---
-    Sleep(2000)
+    ; --- Wait for Minigame (Polling check up to 5 seconds) ---
+    LogAction("Waiting for minigame to load...")
+    minigameLoaded := false
+    Loop 50 { ; Chờ tối đa 5 giây (50 * 100ms)
+        if (!isRunning)
+            return
+        if VerifyMinigameState() {
+            minigameLoaded := true
+            break
+        }
+        Sleep(100)
+    }
 
-    ; --- Safety Check: Verify if actually in minigame ---
-    if (!VerifyMinigameState()) {
+    if (!minigameLoaded) {
         LogAction("Safety Check: 'Give Up' button not found. Teleport failed! Restarting...")
         isRunning := false
         ReleaseAllKeys()
@@ -446,6 +455,9 @@ RunPath() {
     }
     LogAction("Safety Check: Minigame verified.")
     verifyMinigameActive := true
+    
+    ; Bù lại khoảng dừng 2 giây gốc để đồng bộ nhịp độ rơi xuống/camera của path di chuyển
+    Sleep(2000)
 
     Walk("w", 5312)
     Walk("d", 1188)
