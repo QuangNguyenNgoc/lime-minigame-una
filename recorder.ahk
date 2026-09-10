@@ -46,7 +46,7 @@ F5:: {
         currentCombo := ""
         comboStartTick := A_TickCount
         isRecording := true
-        ToolTip("🔴 Recording... (F5 to stop)")
+        ToolTip("Recording... (F5 to stop)")
         SetTimer(() => ToolTip(), -3000)
     }
 }
