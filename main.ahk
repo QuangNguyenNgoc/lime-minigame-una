@@ -651,31 +651,16 @@ RunPath() {
     ; Walk("w", 484)
     ; Walk("w+a", 32)
     ; Walk("a", 546)
-    ; Walk("s", 610)
-    ; Walk("w", 328, 29)
+    ; Walk("s", 610, 29)
 
-    Walk("d", 2938)
-    Walk("w", 516)
-    Walk("a", 438)
-    Walk("s", 485)
-    Walk("w", 2360)
-    Walk("a", 1594)
-    Walk("w", 391)
-    Walk("d", 468)
-    Walk("s", 672)
-    Walk("a", 2063, 30)
+    Walk("w", 359)
+    Walk("d", 3109)
+    Walk("w", 610)
+    Walk("a", 609)
+    Walk("s", 625)
+    Walk("a", 2906, 30)
 
-    Walk("w", 3032)
-    Walk("d", 907)
-    Walk("s", 641)
-    Walk("a+s", 31)
-    Walk("a", 1297)
-    Walk("d", 3235)
-    Walk("s", 687)
-    Walk("a", 656, 30)
-
-
-    Sleep(3000)
+    Sleep(10000)
 
 
     ; --- KẾT THÚC ---
