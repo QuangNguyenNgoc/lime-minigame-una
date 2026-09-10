@@ -81,8 +81,7 @@ F3:: {
     global isRunning, isPaused
     isRunning := false
     isPaused := false
-    ; Release tất cả key để tránh bị kẹt
-    Send("{w up}{a up}{s up}{d up}{e up}")
+    ReleaseAllKeys()
     ToolTip("⏹ Stopped")
     SetTimer(() => ToolTip(), -1000)
     Reload
@@ -104,6 +103,13 @@ F3:: {
 ; === Helpers ===
 
 /**
+ * Xả toàn bộ phím để chống kẹt (Ghosting)
+ */
+ReleaseAllKeys() {
+    Send("{w up}{a up}{s up}{d up}{e up}{Space up}")
+}
+
+/**
  * Walk — giữ key combo trong ms milliseconds rồi release.
  * @param keys    Chuỗi phím, ví dụ: "w", "w+a", "a+s"
  * @param ms      Thời gian giữ (milliseconds)
@@ -111,6 +117,11 @@ F3:: {
  */
 Walk(keys, ms, stepId := 0) {
     global isPaused, isRunning, Config, spamETimerActive
+
+    ; Chặn đứng việc bấm phím bậy bạ nếu macro đã bị huỷ
+    if (!isRunning)
+        return
+
     keyList := StrSplit(keys, "+")
 
     ; Press keys
@@ -226,24 +237,20 @@ StopSpamAndGiveUp() {
         return
 
     spamETimerActive := false
-    SetTimer(TickSpamE, 0) ; Tắt timer gõ phím E
     SetTimer(TickSpamE, 0) ; Stop E spam timer
 
-    ; Bấm mù vào toạ độ nút Give Up
     ; Blind click the Give Up button
-    MouseMove(Config.GiveUpX, Config.GiveUpY, 3)
+    MouseMove(Config.GiveUpX, Config.GiveUpY, 0)
     Sleep(500)
     Click()
-    Sleep(500)
+    Sleep(50)
 
-    LogAction("Đã hết 12s Spam E. Nhấn Give Up. Cắt chu trình để quay lại từ đầu.")
     LogAction("Spam 12s Ended: Give Up & Restart")
 
-    ; Cắt hoàn toàn các Walk() đang chạy dở
     ; Cut all running Walk() paths
     isRunning := false
+    ReleaseAllKeys() ; Xả toàn bộ phím để chống nhảy lung tung
 
-    ; Đợi 1 giây cho an toàn rồi tự động gọi RunPath() lại từ đầu
     ; Wait 1s for safety then auto restart RunPath()
     SetTimer(AutoRestartMacro, -1000)
 }
@@ -251,7 +258,6 @@ StopSpamAndGiveUp() {
 AutoRestartMacro() {
     global isRunning
     isRunning := true
-    LogAction("Tự động Restart RunPath()...")
     LogAction("Restarting RunPath...")
     RunPath()
 }
@@ -309,6 +315,7 @@ RunPath() {
     ; Khởi tạo cờ an toàn cho mỗi Loop mới
     enableRadar := false
     spamETimerActive := false
+    ReleaseAllKeys() ; Giải phóng mọi phím bị kẹt từ loop trước
 
     ; === SETUP ===
     ; --- Reset character ---
@@ -356,8 +363,9 @@ RunPath() {
     Click("Left")
 
     ; === START ===
-    enableRadar := true
+    enableRadar := true ; Bắt đầu quét từ đây (Vào minigame an toàn)
 
+    ; --- Go to align place ---
     Sleep(2000)
     Walk("w", 5312)
     Walk("d", 1188)
@@ -565,6 +573,7 @@ RunPath() {
 
     ; --- KẾT THÚC ---
     isRunning := false
+    ReleaseAllKeys()
     ToolTip("Path complete")
     SetTimer(() => ToolTip(), -3000)
 }
