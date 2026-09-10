@@ -1,6 +1,24 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
+/*
+================================================================================
+I Hate Lime - Roblox Minigame Macro v1.1
+================================================================================
+Author: QuangNguyenNgoc
+License: MIT License
+
+Credits & Inspirations:
+- FishSol Macro: https://github.com/ivelchampion249/FishSol-Macro
+- Natro Macro: https://github.com/NatroTeam/NatroMacro
+
+Description:
+A highly optimized, multi-threaded capable AutoHotkey v2 macro for farming
+minigames in Roblox. Features pixel-perfect radar detection, fail-safe
+fallback routines, and infinite looping.
+================================================================================
+*/
+
 ; === Timing precision ===
 DllCall("winmm\timeBeginPeriod", "UInt", 1)
 OnExit((*) => DllCall("winmm\timeEndPeriod", "UInt", 1))
