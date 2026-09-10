@@ -27,7 +27,7 @@ LoadConfig() {
     iniPath := A_ScriptDir "\config.ini"
 
     if !FileExist(iniPath) {
-        MsgBox("Không tìm thấy config.ini. Vui lòng tạo hoặc copy từ thư mục gốc.")
+        MsgBox("config.ini not found.")
         ExitApp
     }
 
@@ -81,7 +81,7 @@ F3:: {
     global isRunning, isPaused
     isRunning := false
     isPaused := false
-    ; Release tất cả key để tránh bị kẹt
+    ; Release keys
     Send("{w up}{a up}{s up}{d up}{e up}")
     ReleaseAllKeys()
     ToolTip("⏹ Stopped")
@@ -93,10 +93,8 @@ F3:: {
 
 3:: {
     global isRunning, spamETimerActive
-    ; Chỉ cho phép test khi đang chạy Walk (isRunning) và chưa bật Spam (để tránh lặp)
     if (isRunning && !spamETimerActive) {
-        LogAction("[DEBUG] Nhấn phím 3: Ép buộc kích hoạt Spam Mode 12s!")
-        ToolTip("⚠️ FORCE SPAM MODE 12s!")
+        LogAction("[DEBUG] 3: Force spam mode 12s!")
         ToolTip("FORCE SPAM MODE 12s!")
         SetTimer(() => ToolTip(), -2000)
         StartSpamMode()
@@ -106,7 +104,7 @@ F3:: {
 ; === Helpers ===
 
 /**
- * Xả toàn bộ phím để chống kẹt (Ghosting)
+ * anti ghosting keyboard
  */
 ReleaseAllKeys() {
     Send("{w up}{a up}{s up}{d up}{e up}{Space up}")
@@ -121,7 +119,6 @@ ReleaseAllKeys() {
 Walk(keys, ms, stepId := 0) {
     global isPaused, isRunning, Config, spamETimerActive
 
-    ; Chặn đứng việc bấm phím bậy bạ nếu macro đã bị huỷ
     if (!isRunning)
         return
 
@@ -131,7 +128,6 @@ Walk(keys, ms, stepId := 0) {
     for k in keyList
         Send("{" k " down}")
 
-    ; Dùng A_TickCount để đo thời gian chính xác, không bị drift
     startTick := A_TickCount
     while (A_TickCount - startTick) < ms {
         if !isRunning {
@@ -140,7 +136,7 @@ Walk(keys, ms, stepId := 0) {
             return
         }
 
-        ; Xử lý Tạm Dừng (Pause)
+        ; Pause
         if isPaused {
             pauseTick := A_TickCount
             for k in keyList
@@ -156,18 +152,17 @@ Walk(keys, ms, stepId := 0) {
         }
 
         ; === RADAR CHUNK ===
-        ; Chỉ bật quét nếu Radar được cho phép và chưa vào mode SpamE
         ; Only scan if Radar is enabled and not in SpamE mode
         if (enableRadar && !spamETimerActive && CheckRadar()) {
-            LogAction("Radar [XANH] - Phát hiện tại Step " stepId ". Bật chế độ Spam E 12s.")
+            LogAction("Radar [XANH] detect")
             LogAction("Radar: HIT at Step " stepId " (Spam 12s)")
+            ToolTip("Detect color!")
 
             if (Config.Capture) {
                 ; TODO: Chụp ảnh lưu lại (sẽ tích hợp Gdip sau)
                 ; TODO: Capture image (Gdip integration later)
             }
 
-            ; Bật Timer Spam E đa luồng ảo (nhân vật vẫn tiếp tục đi theo pattern)
             ; Start virtual multi-threaded Spam E timer (character continues pattern)
             StartSpamMode()
         }
@@ -211,10 +206,8 @@ StartSpamMode() {
         return
 
     spamETimerActive := true
-    ; Bật luồng gõ phím E mỗi 100ms
     SetTimer(TickSpamE, 100)
 
-    ; Đặt đồng hồ đếm ngược 12 giây (12000ms). Số âm nghĩa là chỉ chạy 1 lần.
     SetTimer(StopSpamAndGiveUp, -12000)
 }
 
@@ -224,15 +217,14 @@ StartSpamMode() {
 TickSpamE() {
     global isRunning, spamETimerActive
     if (!isRunning || !spamETimerActive) {
-        SetTimer(TickSpamE, 0) ; Tắt timer nếu bị huỷ
+        SetTimer(TickSpamE, 0) ; stop
         return
     }
     Send("{e}")
 }
 
 /**
- * Hết 12s, tắt Spam E và nhấn nút Give Up mù
- * Sau đó NGẮT TOÀN BỘ lộ trình và quay lại Loop đầu (Reset character)
+ * endloop
  */
 StopSpamAndGiveUp() {
     global spamETimerActive, Config, isRunning
@@ -240,26 +232,20 @@ StopSpamAndGiveUp() {
         return
 
     spamETimerActive := false
-    SetTimer(TickSpamE, 0) ; Tắt timer gõ phím E
-    SetTimer(TickSpamE, 0) ; Stop E spam timer
+    SetTimer(TickSpamE, 0)
 
-    ; Bấm mù vào toạ độ nút Give Up
     ; Blind click the Give Up button
     MouseMove(Config.GiveUpX, Config.GiveUpY, 3)
-    MouseMove(Config.GiveUpX, Config.GiveUpY, 0)
     Sleep(500)
     Click()
     Sleep(500)
 
-    LogAction("Đã hết 12s Spam E. Nhấn Give Up. Cắt chu trình để quay lại từ đầu.")
     LogAction("Spam 12s Ended: Give Up & Restart")
 
-    ; Cắt hoàn toàn các Walk() đang chạy dở
     ; Cut all running Walk() paths
     isRunning := false
-    ReleaseAllKeys() ; Xả toàn bộ phím để chống nhảy lung tung
+    ReleaseAllKeys()
 
-    ; Đợi 1 giây cho an toàn rồi tự động gọi RunPath() lại từ đầu
     ; Wait 1s for safety then auto restart RunPath()
     SetTimer(AutoRestartMacro, -1000)
 }
@@ -267,7 +253,6 @@ StopSpamAndGiveUp() {
 AutoRestartMacro() {
     global isRunning
     isRunning := true
-    LogAction("Tự động Restart RunPath()...")
     LogAction("Restarting RunPath...")
     RunPath()
 }
@@ -280,7 +265,7 @@ AlignCameraTopDown() {
     if !isRunning
         return
 
-    ; Bước 1: Lăn chuột vào Góc nhìn thứ nhất (First-person)
+    ; Bước 1: Lăn chuột vào Góc nhìn thứ nhất
     Loop 20 {
         if !isRunning
             return
@@ -289,10 +274,10 @@ AlignCameraTopDown() {
     }
     Sleep(200)
 
-    ; Bước 2: Kéo chuột nhìn thẳng xuống đất bằng DllCall
+    ; Bước 2: Kéo chuột nhìn thẳng xuống đất
     Click("Right Down")
     Sleep(100)
-    Loop 40 { ; Để 40 cho chắc chắn ép góc chạm đáy
+    Loop 40 {
         if !isRunning
             break
         DllCall("mouse_event", "UInt", 1, "Int", 0, "Int", 20, "UInt", 0, "UPtr", 0)
@@ -301,7 +286,7 @@ AlignCameraTopDown() {
     Click("Right Up")
     Sleep(200)
 
-    ; Bước 3: Lăn chuột ngược ra 4 nấc
+    ; Bước 3: Lăn chuột ngược ra
     Loop 8 {
         if !isRunning
             return
@@ -309,23 +294,17 @@ AlignCameraTopDown() {
         Sleep(50)
     }
 
-    LogAction("Setup: Đã căn chỉnh Camera Top-Down.")
     LogAction("Setup: Camera aligned")
 }
 
 ; === Path Flow ===
 
-/**
- * RunPath — flow chính.
- * Viết path của bạn ở đây. Tham khảo README.md để biết cách dùng.
- */
 RunPath() {
     global isRunning, enableRadar, spamETimerActive
 
-    ; Khởi tạo cờ an toàn cho mỗi Loop mới
     enableRadar := false
     spamETimerActive := false
-    ReleaseAllKeys() ; Giải phóng mọi phím bị kẹt từ loop trước
+    ReleaseAllKeys() ; safe release
 
     ; === SETUP ===
     ; --- Reset character ---
@@ -373,7 +352,7 @@ RunPath() {
     Click("Left")
 
     ; === START ===
-    enableRadar := true ; Bắt đầu quét từ đây (Vào minigame an toàn)
+    enableRadar := true
 
     ; --- Go to align place ---
     Sleep(2000)
@@ -444,7 +423,6 @@ RunPath() {
     Walk("d", 2672)
     Walk("s", 1109)
     Walk("a", 1000, 8)
-
 
     Walk("s", 3125)
     Walk("d", 2266)
