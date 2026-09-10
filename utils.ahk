@@ -27,8 +27,15 @@ LoadConfig() {
 }
 
 1:: {
-    ; Tự động Focus vào game nếu cần (tuỳ chọn)
-    ; WinActivate("Roblox")
+    ; Tự động Focus vào game nếu cần
+    MouseMove(47, 467, 3)
+    Sleep(400)
+    Click("Left")
+    Sleep(400)
+    MouseMove(382, 126, 3)
+    Sleep(400)
+    Click("Left")
+    Sleep(400)
 
     ; Bước 1: Lăn chuột vào Góc nhìn thứ nhất (First-person)
     ; Lăn 20 nấc để đảm bảo chạm giới hạn zoom-in tối đa
@@ -52,7 +59,7 @@ LoadConfig() {
 
     ; Bước 3: Lăn chuột ngược ra vài nấc để có góc view gần
     ; Bạn có thể thay đổi số nấc lăn (Loop 3, 4, 5...) tuỳ ý
-    Loop 4 {
+    Loop 20 {
         Send("{WheelDown}")
         Sleep(50)
     }
