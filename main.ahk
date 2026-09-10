@@ -1,6 +1,24 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
+/*
+================================================================================
+I Hate Lime - Roblox Minigame Macro v1.1
+================================================================================
+Author: QuangNguyenNgoc
+License: MIT License
+
+Credits & Inspirations:
+- FishSol Macro: https://github.com/ivelchampion249/FishSol-Macro
+- Natro Macro: https://github.com/NatroTeam/NatroMacro
+
+Description:
+A highly optimized, multi-threaded capable AutoHotkey v2 macro for farming
+minigames in Roblox. Features pixel-perfect radar detection, fail-safe
+fallback routines, and infinite looping.
+================================================================================
+*/
+
 ; === Timing precision ===
 DllCall("winmm\timeBeginPeriod", "UInt", 1)
 OnExit((*) => DllCall("winmm\timeEndPeriod", "UInt", 1))
@@ -17,8 +35,11 @@ global enableRadar := false
 global spamETimerActive := false
 global Config := {}
 
-; Nạp cấu hình ngay khi khởi động
+; Load configuration on startup
 LoadConfig()
+
+; === GUI ===
+#Include gui.ahk
 
 ; === Functions ===
 
@@ -31,12 +52,12 @@ LoadConfig() {
         ExitApp
     }
 
-    ; Đọc [Features]
+    ; Read [Features]
     Config.Logging := Integer(IniRead(iniPath, "Features", "EnableLogging", "1"))
     Config.Capture := Integer(IniRead(iniPath, "Features", "EnableCapture", "1"))
     Config.Debug := Integer(IniRead(iniPath, "Features", "EnableDebug", "0"))
 
-    ; Đọc [Radar]
+    ; Read [Radar]
     Config.GiveUpX := Integer(IniRead(iniPath, "Radar", "GiveUpX", "500"))
     Config.GiveUpY := Integer(IniRead(iniPath, "Radar", "GiveUpY", "500"))
     Config.TargetColor := IniRead(iniPath, "Radar", "TargetColor", "0x00FF00")
@@ -49,18 +70,32 @@ LoadConfig() {
 
 LogAction(msg) {
     global Config
+    logLine := "[" A_Hour ":" A_Min ":" A_Sec "] " msg
+
+    ; Update GUI Log
+    try {
+        GuiLog(logLine)
+    }
+
     if (Config.Logging) {
-        logLine := "[" A_YYYY "-" A_MM "-" A_DD " " A_Hour ":" A_Min ":" A_Sec "] " msg "`n"
-        FileAppend(logLine, A_ScriptDir "\log.txt")
+        FileAppend(logLine "`n", A_ScriptDir "\log.txt")
     }
 }
 
 ; === Hotkeys ===
 
-F1:: {
+StartMacro(*) {
     global isRunning, isPaused
     if isRunning
         return
+
+    ; Auto Focus Roblox
+    if WinExist("ahk_exe RobloxPlayerBeta.exe") {
+        WinActivate("ahk_exe RobloxPlayerBeta.exe")
+    } else if WinExist("Roblox") {
+        WinActivate("Roblox")
+    }
+
     isRunning := true
     isPaused := false
     ToolTip("▶ Running")
@@ -68,8 +103,8 @@ F1:: {
     RunPath()
 }
 
-F2:: {
-    global isPaused
+PauseMacro(*) {
+    global isPaused, isRunning
     if !isRunning
         return
     isPaused := !isPaused
@@ -77,29 +112,19 @@ F2:: {
     SetTimer(() => ToolTip(), -2000)
 }
 
-F3:: {
+StopMacro(*) {
     global isRunning, isPaused
     isRunning := false
     isPaused := false
-    ; Release keys
-    Send("{w up}{a up}{s up}{d up}{e up}")
     ReleaseAllKeys()
     ToolTip("⏹ Stopped")
     SetTimer(() => ToolTip(), -1000)
     Reload
 }
 
-; === Debug Hotkeys ===
-
-3:: {
-    global isRunning, spamETimerActive
-    if (isRunning && !spamETimerActive) {
-        LogAction("[DEBUG] 3: Force spam mode 12s!")
-        ToolTip("FORCE SPAM MODE 12s!")
-        SetTimer(() => ToolTip(), -2000)
-        StartSpamMode()
-    }
-}
+F1:: StartMacro()
+F2:: PauseMacro()
+F3:: StopMacro()
 
 ; === Helpers ===
 
@@ -111,10 +136,10 @@ ReleaseAllKeys() {
 }
 
 /**
- * Walk — giữ key combo trong ms milliseconds rồi release.
- * @param keys    Chuỗi phím, ví dụ: "w", "w+a", "a+s"
- * @param ms      Thời gian giữ (milliseconds)
- * @param stepId  (Tuỳ chọn) Đánh dấu ID của luống để Ghi log
+ * Walk - Hold key combo for ms milliseconds then release.
+ * @param keys    Key string, e.g., "w", "w+a", "a+s"
+ * @param ms      Hold duration (milliseconds)
+ * @param stepId  (Optional) ID of the path step for logging
  */
 Walk(keys, ms, stepId := 0) {
     global isPaused, isRunning, Config, spamETimerActive
@@ -145,7 +170,7 @@ Walk(keys, ms, stepId := 0) {
                 Sleep(50)
             if !isRunning
                 return
-            ; Bù thời gian pause vào startTick
+            ; Compensate startTick for paused duration
             startTick += A_TickCount - pauseTick
             for k in keyList
                 Send("{" k " down}")
@@ -174,7 +199,7 @@ Walk(keys, ms, stepId := 0) {
     ; Release keys
     for k in keyList
         Send("{" k " up}")
-    Sleep(50)  ; micro-gap giữa các segment
+    Sleep(50)  ; Micro-gap between walk segments
 
     if (stepId > 0)
         LogAction("Step " stepId ": none")
@@ -189,7 +214,7 @@ Walk(keys, ms, stepId := 0) {
 global spamETimerActive := false
 
 /**
- * CheckRadar - Quét tìm Pixel trong vùng giới hạn (Bounding Box)
+ * CheckRadar - Scan for Pixel within the Bounding Box
  */
 CheckRadar() {
     global Config
@@ -198,7 +223,7 @@ CheckRadar() {
 }
 
 /**
- * Kích hoạt chế độ Vừa Đi Vừa Nhặt (Spam E)
+ * Activate Spam E mode while walking
  */
 StartSpamMode() {
     global spamETimerActive
@@ -212,7 +237,7 @@ StartSpamMode() {
 }
 
 /**
- * Hàm được SetTimer gọi liên tục mỗi 100ms
+ * Timer callback called every 100ms to spam E
  */
 TickSpamE() {
     global isRunning, spamETimerActive
@@ -258,7 +283,7 @@ AutoRestartMacro() {
 }
 
 /**
- * AlignCameraTopDown — Chỉnh camera về góc nhìn từ trên xuống (Góc nhìn thứ 1 -> Cúi xuống -> Lăn ra)
+ * AlignCameraTopDown - Align camera to top-down view (First-person -> Look down -> Zoom out)
  */
 AlignCameraTopDown() {
     global isRunning
@@ -715,9 +740,9 @@ RunPath() {
     Sleep(2000)
 
 
-    ; --- KẾT THÚC ---
+    ; --- END ---
 
-    ; Trường hợp 1: Phát hiện vật thể ở những bước cuối cùng
+    ; Case 1: Target detected at the very end of the path
     if (spamETimerActive) {
         LogAction("End of path reached. Waiting for 12s Spam to finish...")
         while (spamETimerActive && isRunning) {
@@ -726,7 +751,7 @@ RunPath() {
         return ; StopSpamAndGiveUp sẽ làm việc tiếp
     }
 
-    ; Trường hợp 2: Đi hết đường mà không thấy gì cả -> Tự động đi lại từ đầu
+    ; Case 2: Walked entire path without detecting anything -> Auto restart
     isRunning := false
     ReleaseAllKeys()
     LogAction("Path complete (Nothing found). Auto-restarting loop...")
