@@ -2,10 +2,10 @@
 #Include "%A_ScriptDir%\lib\Gdip_All.ahk"
 
 ; --- CẤU HÌNH VÙNG CHỤP (ROI) ---
-global roiX := 210     ; Cách lề trái màn hình
-global roiY := 110      ; Cách lề trên màn hình
-global roiW := 1710    ; Chiều rộng ảnh
-global roiH := 835     ; Chiều cao ảnh
+global roiX := 950     ; Cách lề trái màn hình
+global roiY := 202      ; Cách lề trên màn hình
+global roiW := 20    ; Chiều rộng ảnh
+global roiH := 10     ; Chiều cao ảnh
 global roiString := roiX "|" roiY "|" roiW "|" roiH
 ; --------------------------------
 

@@ -32,6 +32,7 @@ CoordMode("Mouse", "Client")
 global isRunning := false
 global isPaused := false
 global enableRadar := false
+global verifyMinigameActive := false
 global spamETimerActive := false
 global Config := {}
 
@@ -60,6 +61,7 @@ LoadConfig() {
     ; Read [Radar]
     Config.GiveUpX := Integer(IniRead(iniPath, "Radar", "GiveUpX", "500"))
     Config.GiveUpY := Integer(IniRead(iniPath, "Radar", "GiveUpY", "500"))
+    Config.GiveUpColor := IniRead(iniPath, "Radar", "GiveUpColor", "0xFF0000")
     Config.TargetColor := IniRead(iniPath, "Radar", "TargetColor", "0x00FF00")
     Config.ColorVar := Integer(IniRead(iniPath, "Radar", "ColorVariation", "10"))
     Config.RadarX := Integer(IniRead(iniPath, "Radar", "ScanX", "400"))
@@ -182,6 +184,24 @@ Walk(keys, ms, stepId := 0) {
             startTick += A_TickCount - pauseTick
             for k in keyList
                 Send("{" k " down}")
+        }
+
+        ; === CONTINUOUS SAFETY CHECK ===
+        if (verifyMinigameActive && !VerifyMinigameState()) {
+            if (spamETimerActive) {
+                LogAction("Minigame ended early (Item collected!). Aborting 12s timer & Restarting...")
+                spamETimerActive := false
+                SetTimer(TickSpamE, 0)
+                SetTimer(StopSpamAndGiveUp, 0) ; Kill the 12s timer
+            } else {
+                LogAction("CRITICAL: Minigame lost (Disconnected/Crashed). Aborting...")
+            }
+            isRunning := false
+            for k in keyList
+                Send("{" k " up}")
+            ReleaseAllKeys()
+            SetTimer(AutoRestartMacro, -1000)
+            return
         }
 
         ; === RADAR CHUNK ===
@@ -330,14 +350,40 @@ AlignCameraTopDown() {
     LogAction("Setup: Camera aligned")
 }
 
+
+/**
+ * VerifyMinigameState - Checks if the Give Up button (Red color) is present on screen.
+ */
+VerifyMinigameState() {
+    global Config
+    ; Mở rộng vùng tìm kiếm (200x100) quanh toạ độ GiveUpX/Y để đảm bảo bắt trúng toàn bộ nút
+    startX := Config.GiveUpX - 50
+    startY := Config.GiveUpY - 15
+    endX := Config.GiveUpX + 50
+    endY := Config.GiveUpY + 15
+
+    ; Variation 70 để bắt mọi tone màu đỏ của nút Give Up (kể cả khi viền nhạt/sáng)
+    found := PixelSearch(&outX, &outY, startX, startY, endX, endY, Config.GiveUpColor, 70)
+    return found
+}
+
 ; === Path Flow ===
 
 RunPath() {
-    global isRunning, enableRadar, spamETimerActive
+    global isRunning, enableRadar, spamETimerActive, verifyMinigameActive
 
     enableRadar := false
     spamETimerActive := false
+    verifyMinigameActive := false
     ReleaseAllKeys() ; safe release
+
+    ; === ĐẢM BẢO GAME LUÔN FOCUS KHI TỰ ĐỘNG RESTART ===
+    if WinExist("ahk_exe RobloxPlayerBeta.exe") {
+        WinActivate("ahk_exe RobloxPlayerBeta.exe")
+    } else if WinExist("Roblox") {
+        WinActivate("Roblox")
+    }
+    Sleep(500)
 
     ; === SETUP ===
     ; --- Reset character ---
@@ -387,26 +433,49 @@ RunPath() {
     ; === START ===
     enableRadar := true
 
-    ; --- Go to align place ---
+    ; --- Wait for Minigame (Polling check up to 5 seconds) ---
+    LogAction("Waiting for minigame to load...")
+    minigameLoaded := false
+    Loop 50 { ; Chờ tối đa 5 giây (50 * 100ms)
+        if (!isRunning)
+            return
+        if VerifyMinigameState() {
+            minigameLoaded := true
+            break
+        }
+        Sleep(100)
+    }
+
+    if (!minigameLoaded) {
+        LogAction("Safety Check: 'Give Up' button not found. Teleport failed! Restarting...")
+        isRunning := false
+        ReleaseAllKeys()
+        SetTimer(AutoRestartMacro, -1000)
+        return
+    }
+    LogAction("Safety Check: Minigame verified.")
+    verifyMinigameActive := true
+
+    ; Bù lại khoảng dừng 2 giây gốc để đồng bộ nhịp độ rơi xuống/camera của path di chuyển
     Sleep(2000)
-    Walk("w", 5312)
-    Walk("d", 1188)
-    Sleep(281)
-    Walk("Space", 188)
-    Sleep(109)
-    Walk("d", 172)
-    Sleep(672)
-    Walk("Space", 140)
-    Walk("d", 625)
-    Sleep(766)
+
+    Walk("w", 5297)
+    Walk("d", 1187)
+    Walk("a", 250)
+    Walk("d+Space", 156)
+    Walk("d", 578)
+    Walk("a", 156)
+    Walk("d+Space", 125)
+    Walk("d", 600)
     Walk("s", 281, 1)
-    Sleep(453)
-    Walk("d", 1438)
+
+    Walk("d", 1230)
     Walk("s", 579)
     Walk("a", 625)
-    Walk("w", 516, 2)
-    Walk("d", 4860)
-    Walk("d+Space", 125)
+    Walk("w", 625, 2)
+
+    Walk("d", 5000)
+    Walk("d+Space", 200)
     Walk("d", 1828, 3)
     Walk("s", 719)
     Sleep(110)
@@ -436,7 +505,9 @@ RunPath() {
     Walk("a", 359)
     Walk("s", 1094)
     Walk("d", 641)
-    Walk("a", 438)
+    Walk("a", 500)
+    Walk("s", 255)
+    Walk("d", 700)
     Walk("s", 4469)
 
     Walk("w", 250)
@@ -453,7 +524,15 @@ RunPath() {
     Walk("s", 187)
     Walk("w+Space", 200)
     Walk("w", 577)
-    Walk("d", 2672)
+
+    Walk("d", 450)
+    Walk("w", 1625)
+    Walk("s", 578)
+    Walk("d", 547)
+    Walk("w", 641)
+    Walk("s", 1625)
+
+    Walk("d", 2300)
     Walk("s", 1109)
     Walk("a", 1000, 8)
 
@@ -607,8 +686,9 @@ RunPath() {
     Walk("a", 1390)
     Walk("w", 563)
     Walk("d", 1031)
-    Walk("a", 938)
-    Walk("a+Space", 156)
+    Walk("a", 1400)
+    Walk("d", 200)
+    Walk("a+Space", 200)
     Walk("a", 1499)
     Walk("w", 1080, 23)
 
@@ -637,8 +717,16 @@ RunPath() {
     Walk("s", 625, 25)
 
     Walk("w", 766)
-    Walk("d", 4219)
-    Walk("s", 578)
+
+    Walk("d", 2609)
+    Walk("s", 719)
+    Walk("d", 953)
+    Walk("s", 671)
+    Walk("d", 734)
+    Walk("w", 718)
+    Walk("d", 593)
+    Walk("s", 687)
+
     Walk("a+s", 94)
     Walk("a", 47)
     Walk("w", 156)
