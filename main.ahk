@@ -370,12 +370,20 @@ VerifyMinigameState() {
 ; === Path Flow ===
 
 RunPath() {
-    global isRunning, enableRadar, spamETimerActive
+    global isRunning, enableRadar, spamETimerActive, verifyMinigameActive
 
     enableRadar := false
     spamETimerActive := false
     verifyMinigameActive := false
     ReleaseAllKeys() ; safe release
+
+    ; === ĐẢM BẢO GAME LUÔN FOCUS KHI TỰ ĐỘNG RESTART ===
+    if WinExist("ahk_exe RobloxPlayerBeta.exe") {
+        WinActivate("ahk_exe RobloxPlayerBeta.exe")
+    } else if WinExist("Roblox") {
+        WinActivate("Roblox")
+    }
+    Sleep(500)
 
     ; === SETUP ===
     ; --- Reset character ---
