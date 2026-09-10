@@ -7,7 +7,7 @@
 A lightweight, multi-threaded AutoHotkey v2 macro for automating Roblox minigames with pixel-perfect radar detection and fail-safe looping.
 
 ## Usage
-
+Requires **1920x1080** resolution, full-screen mode, and **VIP** passive speed.
 1. Configure your target colors and UI coordinates in `config.ini`.
 2. Run `main.ahk`.
 3. Use the following hotkeys:
