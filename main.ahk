@@ -660,6 +660,11 @@ RunPath() {
     Walk("s", 625)
     Walk("a", 2906, 30)
 
+    Walk("w", 2578)
+    Walk("d", 1625)
+    Walk("s", 550)
+    Walk("a", 1990, 31)
+
     Sleep(10000)
 
 
