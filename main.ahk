@@ -246,6 +246,7 @@ StopSpamAndGiveUp() {
     ; Bấm mù vào toạ độ nút Give Up
     ; Blind click the Give Up button
     MouseMove(Config.GiveUpX, Config.GiveUpY, 3)
+    MouseMove(Config.GiveUpX, Config.GiveUpY, 0)
     Sleep(500)
     Click()
     Sleep(500)
@@ -372,7 +373,6 @@ RunPath() {
     Click("Left")
 
     ; === START ===
-    enableRadar := true
     enableRadar := true ; Bắt đầu quét từ đây (Vào minigame an toàn)
 
     ; --- Go to align place ---
