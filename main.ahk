@@ -357,10 +357,10 @@ AlignCameraTopDown() {
 VerifyMinigameState() {
     global Config
     ; Mở rộng vùng tìm kiếm (200x100) quanh toạ độ GiveUpX/Y để đảm bảo bắt trúng toàn bộ nút
-    startX := Config.GiveUpX - 100
-    startY := Config.GiveUpY - 50
-    endX := Config.GiveUpX + 100
-    endY := Config.GiveUpY + 50
+    startX := Config.GiveUpX - 50
+    startY := Config.GiveUpY - 15
+    endX := Config.GiveUpX + 50
+    endY := Config.GiveUpY + 15
 
     ; Variation 70 để bắt mọi tone màu đỏ của nút Give Up (kể cả khi viền nhạt/sáng)
     found := PixelSearch(&outX, &outY, startX, startY, endX, endY, Config.GiveUpColor, 70)
@@ -455,7 +455,7 @@ RunPath() {
     }
     LogAction("Safety Check: Minigame verified.")
     verifyMinigameActive := true
-    
+
     ; Bù lại khoảng dừng 2 giây gốc để đồng bộ nhịp độ rơi xuống/camera của path di chuyển
     Sleep(2000)
 
