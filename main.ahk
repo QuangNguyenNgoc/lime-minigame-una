@@ -580,8 +580,20 @@ RunPath() {
 
 
     ; --- KẾT THÚC ---
+
+    ; Trường hợp 1: Phát hiện vật thể ở những bước cuối cùng
+    if (spamETimerActive) {
+        LogAction("End of path reached. Waiting for 12s Spam to finish...")
+        while (spamETimerActive && isRunning) {
+            Sleep(100)
+        }
+        return ; StopSpamAndGiveUp sẽ làm việc tiếp
+    }
+
+    ; Trường hợp 2: Đi hết đường mà không thấy gì cả -> Tự động đi lại từ đầu
     isRunning := false
     ReleaseAllKeys()
-    ToolTip("Path complete")
-    SetTimer(() => ToolTip(), -3000)
+    LogAction("Path complete (Nothing found). Auto-restarting loop...")
+    ToolTip("Restarting Loop...")
+    SetTimer(AutoRestartMacro, -2000)
 }
