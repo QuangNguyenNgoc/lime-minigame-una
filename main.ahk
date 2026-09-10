@@ -85,7 +85,7 @@ LogAction(msg) {
 ; === Hotkeys ===
 
 StartMacro(*) {
-    global isRunning, isPaused
+    global isRunning, isPaused, MainGui
     if isRunning
         return
 
@@ -96,6 +96,9 @@ StartMacro(*) {
         WinActivate("Roblox")
     }
 
+    ; Thu nhỏ GUI để không vướng màn hình
+    WinMinimize(MainGui)
+
     isRunning := true
     isPaused := false
     ToolTip("▶ Running")
@@ -104,10 +107,15 @@ StartMacro(*) {
 }
 
 PauseMacro(*) {
-    global isPaused, isRunning
+    global isPaused, isRunning, MainGui
     if !isRunning
         return
     isPaused := !isPaused
+
+    ; Hiện lại GUI khi tạm dừng
+    if (isPaused)
+        WinRestore(MainGui)
+
     ToolTip(isPaused ? "⏸ Paused" : "▶ Resumed")
     SetTimer(() => ToolTip(), -2000)
 }

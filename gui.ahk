@@ -1,7 +1,7 @@
 ; gui.ahk
 #Requires AutoHotkey v2.0
 
-global MainGui := Gui("+AlwaysOnTop", "I Hate Lime Macro v1.1")
+global MainGui := Gui("", "I Hate Lime Macro v1.1")
 MainGui.OnEvent("Close", (*) => ExitApp())
 
 ; Left side - Control Buttons
