@@ -589,9 +589,22 @@ RunPath() {
     Walk("d", 172)
     Walk("w", 922)
     Walk("d", 295)
-    Walk("s", 1520, 24)
+    Walk("s", 1600, 24)
 
-    Sleep(1515)
+    Walk("d", 4297)
+    Walk("a", 1890)
+    Walk("w", 2187)
+    Walk("d", 735)
+    Walk("s", 547)
+    Walk("a", 531)
+    Walk("d", 2515)
+    Walk("s", 812)
+    Walk("d", 1234)
+    Walk("w", 500)
+    Walk("a", 750)
+    Walk("s", 625, 25)
+
+    Sleep(3000)
 
 
     ; --- KẾT THÚC ---
