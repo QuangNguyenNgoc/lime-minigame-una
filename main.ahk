@@ -107,18 +107,6 @@ F3:: {
     Reload
 }
 
-; === Debug Hotkeys ===
-
-3:: {
-    global isRunning, spamETimerActive
-    if (isRunning && !spamETimerActive) {
-        LogAction("[DEBUG] 3: Force spam mode 12s!")
-        ToolTip("FORCE SPAM MODE 12s!")
-        SetTimer(() => ToolTip(), -2000)
-        StartSpamMode()
-    }
-}
-
 ; === Helpers ===
 
 /**
