@@ -32,6 +32,7 @@ CoordMode("Mouse", "Client")
 global isRunning := false
 global isPaused := false
 global enableRadar := false
+global verifyMinigameActive := false
 global spamETimerActive := false
 global Config := {}
 
@@ -60,6 +61,7 @@ LoadConfig() {
     ; Read [Radar]
     Config.GiveUpX := Integer(IniRead(iniPath, "Radar", "GiveUpX", "500"))
     Config.GiveUpY := Integer(IniRead(iniPath, "Radar", "GiveUpY", "500"))
+    Config.GiveUpColor := IniRead(iniPath, "Radar", "GiveUpColor", "0xFF0000")
     Config.TargetColor := IniRead(iniPath, "Radar", "TargetColor", "0x00FF00")
     Config.ColorVar := Integer(IniRead(iniPath, "Radar", "ColorVariation", "10"))
     Config.RadarX := Integer(IniRead(iniPath, "Radar", "ScanX", "400"))
@@ -182,6 +184,24 @@ Walk(keys, ms, stepId := 0) {
             startTick += A_TickCount - pauseTick
             for k in keyList
                 Send("{" k " down}")
+        }
+
+        ; === CONTINUOUS SAFETY CHECK ===
+        if (verifyMinigameActive && !VerifyMinigameState()) {
+            if (spamETimerActive) {
+                LogAction("Minigame ended early (Item collected!). Aborting 12s timer & Restarting...")
+                spamETimerActive := false
+                SetTimer(TickSpamE, 0)
+                SetTimer(StopSpamAndGiveUp, 0) ; Kill the 12s timer
+            } else {
+                LogAction("CRITICAL: Minigame lost (Disconnected/Crashed). Aborting...")
+            }
+            isRunning := false
+            for k in keyList
+                Send("{" k " up}")
+            ReleaseAllKeys()
+            SetTimer(AutoRestartMacro, -1000)
+            return
         }
 
         ; === RADAR CHUNK ===
@@ -330,6 +350,23 @@ AlignCameraTopDown() {
     LogAction("Setup: Camera aligned")
 }
 
+
+/**
+ * VerifyMinigameState - Checks if the Give Up button (Red color) is present on screen.
+ */
+VerifyMinigameState() {
+    global Config
+    ; Search box around Give Up button based on user's manual config (W=25, H=15)
+    startX := 950
+    startY := 202
+    endX := 950 + 25
+    endY := 202 + 15
+
+    ; Use a generous variation (e.g., 50) for pure Red (0xFF0000)
+    found := PixelSearch(&outX, &outY, startX, startY, endX, endY, Config.GiveUpColor, 50)
+    return found
+}
+
 ; === Path Flow ===
 
 RunPath() {
@@ -337,6 +374,7 @@ RunPath() {
 
     enableRadar := false
     spamETimerActive := false
+    verifyMinigameActive := false
     ReleaseAllKeys() ; safe release
 
     ; === SETUP ===
@@ -389,6 +427,18 @@ RunPath() {
 
     ; --- Go to align place ---
     Sleep(2000)
+
+    ; --- Safety Check: Verify if actually in minigame ---
+    if (!VerifyMinigameState()) {
+        LogAction("Safety Check: 'Give Up' button not found. Teleport failed! Restarting...")
+        isRunning := false
+        ReleaseAllKeys()
+        SetTimer(AutoRestartMacro, -1000)
+        return
+    }
+    LogAction("Safety Check: Minigame verified.")
+    verifyMinigameActive := true
+
     Walk("w", 5312)
     Walk("d", 1188)
     Sleep(281)
