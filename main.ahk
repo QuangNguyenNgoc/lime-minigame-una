@@ -90,16 +90,16 @@ F3:: {
 
 ; === Debug Hotkeys ===
 
-3:: {
-    global isRunning, spamETimerActive
-    ; Chỉ cho phép test khi đang chạy Walk (isRunning) và chưa bật Spam (để tránh lặp)
-    if (isRunning && !spamETimerActive) {
-        LogAction("[DEBUG] Force Spam Mode (12s)")
-        ToolTip("⚠️ FORCE SPAM MODE 12s!")
-        SetTimer(() => ToolTip(), -2000)
-        StartSpamMode()
-    }
-}
+; 3:: {
+;     global isRunning, spamETimerActive
+;     ; Chỉ cho phép test khi đang chạy Walk (isRunning) và chưa bật Spam (để tránh lặp)
+;     if (isRunning && !spamETimerActive) {
+;         LogAction("[DEBUG] Nhấn phím 3: Ép buộc kích hoạt Spam Mode 12s!")
+;         ToolTip("⚠️ FORCE SPAM MODE 12s!")
+;         SetTimer(() => ToolTip(), -2000)
+;         StartSpamMode()
+;     }
+; }
 
 ; === Helpers ===
 
@@ -142,14 +142,18 @@ Walk(keys, ms, stepId := 0) {
         }
 
         ; === RADAR CHUNK ===
+        ; Chỉ bật quét nếu Radar được cho phép và chưa vào mode SpamE
         ; Only scan if Radar is enabled and not in SpamE mode
         if (enableRadar && !spamETimerActive && CheckRadar()) {
+            LogAction("Radar [XANH] - Phát hiện tại Step " stepId ". Bật chế độ Spam E 12s.")
             LogAction("Radar: HIT at Step " stepId " (Spam 12s)")
 
             if (Config.Capture) {
+                ; TODO: Chụp ảnh lưu lại (sẽ tích hợp Gdip sau)
                 ; TODO: Capture image (Gdip integration later)
             }
 
+            ; Bật Timer Spam E đa luồng ảo (nhân vật vẫn tiếp tục đi theo pattern)
             ; Start virtual multi-threaded Spam E timer (character continues pattern)
             StartSpamMode()
         }
@@ -164,7 +168,11 @@ Walk(keys, ms, stepId := 0) {
     Sleep(50)  ; micro-gap giữa các segment
 
     if (stepId > 0)
+        LogAction("Step " stepId ": none")
+    if (stepId > 0) {
         LogAction("Step " stepId ": PASS")
+        ToolTip("Step " stepId ": PASS")
+    }
 }
 
 ; === RADAR & MULTITASKING LOGIC ===
@@ -218,19 +226,24 @@ StopSpamAndGiveUp() {
         return
 
     spamETimerActive := false
+    SetTimer(TickSpamE, 0) ; Tắt timer gõ phím E
     SetTimer(TickSpamE, 0) ; Stop E spam timer
 
+    ; Bấm mù vào toạ độ nút Give Up
     ; Blind click the Give Up button
     MouseMove(Config.GiveUpX, Config.GiveUpY, 0)
     Sleep(50)
     Click()
     Sleep(50)
 
+    LogAction("Đã hết 12s Spam E. Nhấn Give Up. Cắt chu trình để quay lại từ đầu.")
     LogAction("Spam 12s Ended: Give Up & Restart")
 
+    ; Cắt hoàn toàn các Walk() đang chạy dở
     ; Cut all running Walk() paths
     isRunning := false
 
+    ; Đợi 1 giây cho an toàn rồi tự động gọi RunPath() lại từ đầu
     ; Wait 1s for safety then auto restart RunPath()
     SetTimer(AutoRestartMacro, -1000)
 }
@@ -238,6 +251,7 @@ StopSpamAndGiveUp() {
 AutoRestartMacro() {
     global isRunning
     isRunning := true
+    LogAction("Tự động Restart RunPath()...")
     LogAction("Restarting RunPath...")
     RunPath()
 }
@@ -279,6 +293,7 @@ AlignCameraTopDown() {
         Sleep(50)
     }
 
+    LogAction("Setup: Đã căn chỉnh Camera Top-Down.")
     LogAction("Setup: Camera aligned")
 }
 
@@ -354,43 +369,58 @@ RunPath() {
     Walk("Space", 140)
     Walk("d", 625)
     Sleep(766)
-    Walk("s", 281)
+    Walk("s", 281, 1)
     Sleep(453)
-    Walk("d", 1438)
-    Walk("s", 579)
-    Walk("a+s", 31)
-    Walk("a", 625)
-    Walk("w", 516)
-    Walk("d", 3172)
-    Walk("w", 735)
-    Walk("d", 1797)
-    Walk("d+Space", 172)
-    Walk("d", 1828)
-    Walk("s+d", 31)
-    Walk("s", 703)
-    Walk("a+s", 47)
-    Walk("a", 1625)
-    Walk("s", 1094)
-    Walk("a+s", 78)
-    Walk("a", 547)
-    Walk("s", 703)
-    Walk("a+s", 31)
-    Walk("a", 1860)
-    Walk("a+s", 140)
-    Walk("s", 969)
-    Walk("d", 1781)
-    Walk("s", 719)
-    Walk("a+s", 140)
-    Walk("a", 485)
-    Walk("s", 656)
-    Walk("a+s", 47)
-    Walk("a", 313)
-    Walk("a+s", 31)
-    Walk("s", 688)
-    Walk("s+d", 31)
-    Walk("d", 469)
-    Walk("w+d", 218)
-    Walk("d", 235)
+    Walk("d", 1438, 101)
+    Walk("s", 579, 102)
+    Walk("a", 625, 103)
+    Walk("w", 516, 104)
+
+    ; Walk("d+Space", 172)
+    ; Walk("d", 1828)
+    ; Walk("s+d", 31)
+    ; Walk("s", 703)
+    ; Walk("a+s", 47)
+    ; Walk("a", 1625)
+    ; Walk("s", 1094)
+    ; Walk("a+s", 78)
+    ; Walk("a", 547)
+    ; Walk("s", 703)
+    ; Walk("a+s", 31)
+    ; Walk("a", 1860)
+    ; Walk("a+s", 140)
+    ; Walk("s", 969)
+    ; Walk("d", 1781)
+    ; Walk("s", 719)
+    ; Walk("a+s", 140)
+    ; Walk("a", 485)
+    ; Walk("s", 656)
+    ; Walk("a+s", 47)
+    ; Walk("a", 313)
+    ; Walk("a+s", 31)
+    ; Walk("s", 688)
+    ; Walk("s+d", 31)
+    ; Walk("d", 469)
+    ; Walk("w+d", 218)
+    ; Walk("d", 235)
+    ; Walk("d", 1703, 3)
+    ; Walk("s", 350)
+    ; Walk("d", 94)
+    ; Walk("s+Space", 94)
+    ; Walk("s", 718)
+    ; Walk("s", 1407)
+    ; Walk("a", 1782)
+    ; Walk("w", 719)
+    ; Walk("d", 594)
+    ; Walk("s", 593, 4)
+    ; Walk("a", 578)
+    ; Walk("w", 1562)
+    ; Walk("s", 328)
+    ; Walk("d", 281)
+    ; Walk("a", 857)
+    ; Walk("s", 531)
+    ; Walk("d", 671)
+
     Sleep(1515)
 
 
