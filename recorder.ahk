@@ -21,7 +21,6 @@ global tapKeyNames := Map(
     "e", "e",
     "Escape", "Escape",
     "Enter", "Enter",
-    "Tab", "Tab",
     "r", "r",
     "f", "f",
     "q", "q"
@@ -98,7 +97,6 @@ F6:: {
 ~*e:: OnTapKey("e")
 ~*Escape:: OnTapKey("Escape")
 ~*Enter:: OnTapKey("Enter")
-~*Tab:: OnTapKey("Tab")
 ~*r:: OnTapKey("r")
 ~*f:: OnTapKey("f")
 ~*q:: OnTapKey("q")
