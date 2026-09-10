@@ -38,6 +38,9 @@ global Config := {}
 ; Load configuration on startup
 LoadConfig()
 
+; === GUI ===
+#Include gui.ahk
+
 ; === Functions ===
 
 LoadConfig() {
@@ -67,18 +70,32 @@ LoadConfig() {
 
 LogAction(msg) {
     global Config
+    logLine := "[" A_Hour ":" A_Min ":" A_Sec "] " msg
+
+    ; Update GUI Log
+    try {
+        GuiLog(logLine)
+    }
+
     if (Config.Logging) {
-        logLine := "[" A_YYYY "-" A_MM "-" A_DD " " A_Hour ":" A_Min ":" A_Sec "] " msg "`n"
-        FileAppend(logLine, A_ScriptDir "\log.txt")
+        FileAppend(logLine "`n", A_ScriptDir "\log.txt")
     }
 }
 
 ; === Hotkeys ===
 
-F1:: {
+StartMacro(*) {
     global isRunning, isPaused
     if isRunning
         return
+
+    ; Auto Focus Roblox
+    if WinExist("ahk_exe RobloxPlayerBeta.exe") {
+        WinActivate("ahk_exe RobloxPlayerBeta.exe")
+    } else if WinExist("Roblox") {
+        WinActivate("Roblox")
+    }
+
     isRunning := true
     isPaused := false
     ToolTip("▶ Running")
@@ -86,8 +103,8 @@ F1:: {
     RunPath()
 }
 
-F2:: {
-    global isPaused
+PauseMacro(*) {
+    global isPaused, isRunning
     if !isRunning
         return
     isPaused := !isPaused
@@ -95,17 +112,19 @@ F2:: {
     SetTimer(() => ToolTip(), -2000)
 }
 
-F3:: {
+StopMacro(*) {
     global isRunning, isPaused
     isRunning := false
     isPaused := false
-    ; Release keys
-    Send("{w up}{a up}{s up}{d up}{e up}")
     ReleaseAllKeys()
     ToolTip("⏹ Stopped")
     SetTimer(() => ToolTip(), -1000)
     Reload
 }
+
+F1:: StartMacro()
+F2:: PauseMacro()
+F3:: StopMacro()
 
 ; === Helpers ===
 
