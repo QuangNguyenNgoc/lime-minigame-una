@@ -90,16 +90,16 @@ F3:: {
 
 ; === Debug Hotkeys ===
 
-; 3:: {
-;     global isRunning, spamETimerActive
-;     ; Chỉ cho phép test khi đang chạy Walk (isRunning) và chưa bật Spam (để tránh lặp)
-;     if (isRunning && !spamETimerActive) {
-;         LogAction("[DEBUG] Nhấn phím 3: Ép buộc kích hoạt Spam Mode 12s!")
-;         ToolTip("⚠️ FORCE SPAM MODE 12s!")
-;         SetTimer(() => ToolTip(), -2000)
-;         StartSpamMode()
-;     }
-; }
+3:: {
+    global isRunning, spamETimerActive
+    ; Chỉ cho phép test khi đang chạy Walk (isRunning) và chưa bật Spam (để tránh lặp)
+    if (isRunning && !spamETimerActive) {
+        LogAction("[DEBUG] Nhấn phím 3: Ép buộc kích hoạt Spam Mode 12s!")
+        ToolTip("⚠️ FORCE SPAM MODE 12s!")
+        SetTimer(() => ToolTip(), -2000)
+        StartSpamMode()
+    }
+}
 
 ; === Helpers ===
 
@@ -231,10 +231,10 @@ StopSpamAndGiveUp() {
 
     ; Bấm mù vào toạ độ nút Give Up
     ; Blind click the Give Up button
-    MouseMove(Config.GiveUpX, Config.GiveUpY, 0)
-    Sleep(50)
+    MouseMove(Config.GiveUpX, Config.GiveUpY, 3)
+    Sleep(500)
     Click()
-    Sleep(50)
+    Sleep(500)
 
     LogAction("Đã hết 12s Spam E. Nhấn Give Up. Cắt chu trình để quay lại từ đầu.")
     LogAction("Spam 12s Ended: Give Up & Restart")
@@ -535,30 +535,30 @@ RunPath() {
 
     Walk("a", 4094)
     Walk("s", 719)
-    Walk("s+d", 31)
     Walk("d", 1063)
     Walk("w", 735)
     Walk("a", 1735, 19)
 
     Walk("s", 1047)
     Walk("w", 3569)
-    Walk("s", 203)
-    Walk("a", 110)
-    Walk("s", 797)
-    Walk("d", 735)
-    Walk("a", 1000)
-    Walk("s", 578)
-    Walk("d", 1047)
-    Walk("a", 1516)
-    Walk("s", 328)
-    Walk("a", 1375)
-    Walk("s", 391)
-    Walk("d", 391)
-    Walk("d+Space", 140)
-    Walk("d", 1532)
-    Walk("a", 1000)
-    Walk("s", 1000)
-    Walk("d", 1772, 20)
+    Walk("s", 93)
+    Walk("a", 1047)
+    Walk("s", 829)
+    Walk("w", 843)
+    Walk("a", 700)
+    Walk("s", 1015, 20)
+
+    Walk("w", 2953)
+    Walk("a", 797)
+    Walk("s", 250)
+    Walk("s+Space", 156)
+    Walk("s", 375)
+    Walk("a", 453)
+    Walk("d", 938)
+    Walk("s", 421)
+    Walk("d", 500)
+    Walk("a", 1859)
+    Walk("s", 960, 21)
 
     Sleep(1515)
 
