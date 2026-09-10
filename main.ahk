@@ -35,7 +35,7 @@ global enableRadar := false
 global spamETimerActive := false
 global Config := {}
 
-; Nạp cấu hình ngay khi khởi động
+; Load configuration on startup
 LoadConfig()
 
 ; === Functions ===
@@ -49,12 +49,12 @@ LoadConfig() {
         ExitApp
     }
 
-    ; Đọc [Features]
+    ; Read [Features]
     Config.Logging := Integer(IniRead(iniPath, "Features", "EnableLogging", "1"))
     Config.Capture := Integer(IniRead(iniPath, "Features", "EnableCapture", "1"))
     Config.Debug := Integer(IniRead(iniPath, "Features", "EnableDebug", "0"))
 
-    ; Đọc [Radar]
+    ; Read [Radar]
     Config.GiveUpX := Integer(IniRead(iniPath, "Radar", "GiveUpX", "500"))
     Config.GiveUpY := Integer(IniRead(iniPath, "Radar", "GiveUpY", "500"))
     Config.TargetColor := IniRead(iniPath, "Radar", "TargetColor", "0x00FF00")
@@ -129,10 +129,10 @@ ReleaseAllKeys() {
 }
 
 /**
- * Walk — giữ key combo trong ms milliseconds rồi release.
- * @param keys    Chuỗi phím, ví dụ: "w", "w+a", "a+s"
- * @param ms      Thời gian giữ (milliseconds)
- * @param stepId  (Tuỳ chọn) Đánh dấu ID của luống để Ghi log
+ * Walk - Hold key combo for ms milliseconds then release.
+ * @param keys    Key string, e.g., "w", "w+a", "a+s"
+ * @param ms      Hold duration (milliseconds)
+ * @param stepId  (Optional) ID of the path step for logging
  */
 Walk(keys, ms, stepId := 0) {
     global isPaused, isRunning, Config, spamETimerActive
@@ -163,7 +163,7 @@ Walk(keys, ms, stepId := 0) {
                 Sleep(50)
             if !isRunning
                 return
-            ; Bù thời gian pause vào startTick
+            ; Compensate startTick for paused duration
             startTick += A_TickCount - pauseTick
             for k in keyList
                 Send("{" k " down}")
@@ -192,7 +192,7 @@ Walk(keys, ms, stepId := 0) {
     ; Release keys
     for k in keyList
         Send("{" k " up}")
-    Sleep(50)  ; micro-gap giữa các segment
+    Sleep(50)  ; Micro-gap between walk segments
 
     if (stepId > 0)
         LogAction("Step " stepId ": none")
@@ -207,7 +207,7 @@ Walk(keys, ms, stepId := 0) {
 global spamETimerActive := false
 
 /**
- * CheckRadar - Quét tìm Pixel trong vùng giới hạn (Bounding Box)
+ * CheckRadar - Scan for Pixel within the Bounding Box
  */
 CheckRadar() {
     global Config
@@ -216,7 +216,7 @@ CheckRadar() {
 }
 
 /**
- * Kích hoạt chế độ Vừa Đi Vừa Nhặt (Spam E)
+ * Activate Spam E mode while walking
  */
 StartSpamMode() {
     global spamETimerActive
@@ -230,7 +230,7 @@ StartSpamMode() {
 }
 
 /**
- * Hàm được SetTimer gọi liên tục mỗi 100ms
+ * Timer callback called every 100ms to spam E
  */
 TickSpamE() {
     global isRunning, spamETimerActive
@@ -276,7 +276,7 @@ AutoRestartMacro() {
 }
 
 /**
- * AlignCameraTopDown — Chỉnh camera về góc nhìn từ trên xuống (Góc nhìn thứ 1 -> Cúi xuống -> Lăn ra)
+ * AlignCameraTopDown - Align camera to top-down view (First-person -> Look down -> Zoom out)
  */
 AlignCameraTopDown() {
     global isRunning
@@ -733,9 +733,9 @@ RunPath() {
     Sleep(2000)
 
 
-    ; --- KẾT THÚC ---
+    ; --- END ---
 
-    ; Trường hợp 1: Phát hiện vật thể ở những bước cuối cùng
+    ; Case 1: Target detected at the very end of the path
     if (spamETimerActive) {
         LogAction("End of path reached. Waiting for 12s Spam to finish...")
         while (spamETimerActive && isRunning) {
@@ -744,7 +744,7 @@ RunPath() {
         return ; StopSpamAndGiveUp sẽ làm việc tiếp
     }
 
-    ; Trường hợp 2: Đi hết đường mà không thấy gì cả -> Tự động đi lại từ đầu
+    ; Case 2: Walked entire path without detecting anything -> Auto restart
     isRunning := false
     ReleaseAllKeys()
     LogAction("Path complete (Nothing found). Auto-restarting loop...")
