@@ -81,6 +81,8 @@ F3:: {
     global isRunning, isPaused
     isRunning := false
     isPaused := false
+    ; Release tất cả key để tránh bị kẹt
+    Send("{w up}{a up}{s up}{d up}{e up}")
     ReleaseAllKeys()
     ToolTip("⏹ Stopped")
     SetTimer(() => ToolTip(), -1000)
@@ -95,6 +97,7 @@ F3:: {
     if (isRunning && !spamETimerActive) {
         LogAction("[DEBUG] Nhấn phím 3: Ép buộc kích hoạt Spam Mode 12s!")
         ToolTip("⚠️ FORCE SPAM MODE 12s!")
+        ToolTip("FORCE SPAM MODE 12s!")
         SetTimer(() => ToolTip(), -2000)
         StartSpamMode()
     }
@@ -237,20 +240,25 @@ StopSpamAndGiveUp() {
         return
 
     spamETimerActive := false
+    SetTimer(TickSpamE, 0) ; Tắt timer gõ phím E
     SetTimer(TickSpamE, 0) ; Stop E spam timer
 
+    ; Bấm mù vào toạ độ nút Give Up
     ; Blind click the Give Up button
-    MouseMove(Config.GiveUpX, Config.GiveUpY, 0)
+    MouseMove(Config.GiveUpX, Config.GiveUpY, 3)
     Sleep(500)
     Click()
-    Sleep(50)
+    Sleep(500)
 
+    LogAction("Đã hết 12s Spam E. Nhấn Give Up. Cắt chu trình để quay lại từ đầu.")
     LogAction("Spam 12s Ended: Give Up & Restart")
 
+    ; Cắt hoàn toàn các Walk() đang chạy dở
     ; Cut all running Walk() paths
     isRunning := false
     ReleaseAllKeys() ; Xả toàn bộ phím để chống nhảy lung tung
 
+    ; Đợi 1 giây cho an toàn rồi tự động gọi RunPath() lại từ đầu
     ; Wait 1s for safety then auto restart RunPath()
     SetTimer(AutoRestartMacro, -1000)
 }
@@ -258,6 +266,7 @@ StopSpamAndGiveUp() {
 AutoRestartMacro() {
     global isRunning
     isRunning := true
+    LogAction("Tự động Restart RunPath()...")
     LogAction("Restarting RunPath...")
     RunPath()
 }
@@ -363,6 +372,7 @@ RunPath() {
     Click("Left")
 
     ; === START ===
+    enableRadar := true
     enableRadar := true ; Bắt đầu quét từ đây (Vào minigame an toàn)
 
     ; --- Go to align place ---
