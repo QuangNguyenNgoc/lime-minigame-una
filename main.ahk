@@ -852,9 +852,11 @@ RunPath() {
     }
 
     ; Case 2: Walked entire path without detecting anything -> Auto restart
-    isRunning := false
-    ReleaseAllKeys()
-    LogAction("Path complete (Nothing found). Auto-restarting loop...")
-    ToolTip("Restarting Loop...")
-    SetTimer(AutoRestartMacro, -2000)
+    if (isRunning) {
+        isRunning := false
+        ReleaseAllKeys()
+        LogAction("Path complete (Nothing found). Auto-restarting loop...")
+        ToolTip("Restarting Loop...")
+        SetTimer(AutoRestartMacro, -2000)
+    }
 }
