@@ -307,6 +307,10 @@ AutoRestartMacro() {
     global isRunning
     isRunning := true
     LogAction("Restarting RunPath...")
+    MouseMove(Config.GiveUpX, Config.GiveUpY, 3)
+    Sleep(500)
+    Click()
+    Sleep(500)
     RunPath()
 }
 
