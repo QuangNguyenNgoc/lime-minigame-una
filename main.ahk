@@ -138,11 +138,17 @@ PauseMacro(*) {
 }
 
 StopMacro(*) {
-    global isRunning, isPaused
+    global isRunning, isPaused, currentLoopCount
+
+    ; Nếu đang chạy dở 1 vòng lặp mà bị ngắt, ghi lại Log Transaction
+    if (isRunning && currentLoopCount > 0) {
+        LogTransaction("STOPPED (User Aborted)")
+    }
+
     isRunning := false
     isPaused := false
     ReleaseAllKeys()
-    ToolTip("⏹ Stopped")
+    ToolTip("⛔ Stopped")
     SetTimer(() => ToolTip(), -1000)
     Reload
 }
@@ -506,6 +512,7 @@ RunPath() {
     ; Bù lại khoảng dừng 2 giây gốc để đồng bộ nhịp độ rơi xuống/camera của path di chuyển
     Sleep(2000)
 
+    currentZone := "near the donation board"
     Walk("w", 5297)
     Walk("d", 1187)
     Walk("a", 250)
@@ -521,6 +528,7 @@ RunPath() {
     Walk("a", 625)
     Walk("w", 625, 2)
 
+    currentZone := "near parkour"
     Walk("d", 5000)
     Walk("d+Space", 200)
     Walk("d", 1828, 3)
@@ -540,6 +548,7 @@ RunPath() {
     Walk("d", 360)
     Walk("s", 547, 5)
 
+    currentZone := "roll leadboard"
     Walk("a", 547)
     Walk("s", 625)
     Walk("a", 608)
@@ -635,6 +644,7 @@ RunPath() {
     Walk("s", 1047)
     Walk("d", 3406, 13)
 
+    currentZone := "french"
     Walk("a", 187)
     Walk("d", 31)
     Walk("d+Space", 188)
@@ -688,6 +698,7 @@ RunPath() {
     Walk("d", 796)
     Walk("w", 3250, 18)
 
+    currentZone := "hut"
     Walk("a", 4094)
     Walk("s", 719)
     Walk("d", 1063)
