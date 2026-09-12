@@ -35,6 +35,10 @@ global enableRadar := false
 global verifyMinigameActive := false
 global verifyFailStartTick := 0
 global spamETimerActive := false
+global currentZone := "Spawn"
+global loopStartTime := ""
+global currentLoopCount := 0
+global lastStepId := 0
 global Config := {}
 
 ; Load configuration on startup
@@ -72,16 +76,26 @@ LoadConfig() {
 }
 
 LogAction(msg) {
-    global Config
     logLine := "[" A_Hour ":" A_Min ":" A_Sec "] " msg
-
-    ; Update GUI Log
     try {
         GuiLog(logLine)
     }
+}
+
+LogTransaction(result) {
+    global Config, loopStartTime, currentLoopCount, currentZone, lastStepId
+    endTime := FormatTime(, "HH:mm:ss")
+
+    transLine := "[" loopStartTime " -> " endTime "] Loop " currentLoopCount " | Zone: " currentZone " (Step " lastStepId ") | Result: " result
+
+    try {
+        GuiLog("=========================================")
+        GuiLog(transLine)
+        GuiLog("=========================================")
+    }
 
     if (Config.Logging) {
-        FileAppend(logLine "`n", A_ScriptDir "\log.txt")
+        FileAppend(transLine "`n", A_ScriptDir "\log.txt")
     }
 }
 
@@ -153,7 +167,7 @@ ReleaseAllKeys() {
  * @param stepId  (Optional) ID of the path step for logging
  */
 Walk(keys, ms, stepId := 0) {
-    global verifyFailStartTick, isPaused, isRunning, Config, spamETimerActive
+    global lastStepId, verifyFailStartTick, isPaused, isRunning, Config, spamETimerActive
 
     if (!isRunning)
         return
@@ -195,11 +209,13 @@ Walk(keys, ms, stepId := 0) {
                 } else if (A_TickCount - verifyFailStartTick > 5000) { ; Mất liên tục quá 5 giây mới chốt
                     if (spamETimerActive) {
                         LogAction("Minigame ended early (Item collected!). Aborting 12s timer & Restarting...")
+                        LogTransaction("FOUND EARLY (Teleported)")
                         spamETimerActive := false
                         SetTimer(TickSpamE, 0)
                         SetTimer(StopSpamAndGiveUp, 0) ; Kill the 12s timer
                     } else {
                         LogAction("CRITICAL: Minigame lost (Disconnected/Crashed). Aborting...")
+                        LogTransaction("CRITICAL (Lost minigame)")
                     }
                     isRunning := false
                     for k in keyList
@@ -238,8 +254,10 @@ Walk(keys, ms, stepId := 0) {
         Send("{" k " up}")
     Sleep(50)  ; Micro-gap between walk segments
 
-    if (stepId > 0)
+    if (stepId > 0) {
+        lastStepId := stepId
         LogAction("Step " stepId ": none")
+    }
     if (stepId > 0) {
         LogAction("Step " stepId ": PASS")
         ToolTip("Step " stepId ": PASS")
@@ -249,6 +267,10 @@ Walk(keys, ms, stepId := 0) {
 ; === RADAR & MULTITASKING LOGIC ===
 
 global spamETimerActive := false
+global currentZone := "Spawn"
+global loopStartTime := ""
+global currentLoopCount := 0
+global lastStepId := 0
 
 /**
  * CheckRadar - Scan for Pixel within the Bounding Box
@@ -303,6 +325,7 @@ StopSpamAndGiveUp() {
     Sleep(500)
 
     LogAction("Spam 12s Ended: Give Up & Restart")
+    LogTransaction("FOUND (Caught Item)")
 
     ; Cut all running Walk() paths
     isRunning := false
@@ -384,6 +407,15 @@ VerifyMinigameState() {
 
 RunPath() {
     global isRunning, enableRadar, spamETimerActive, verifyMinigameActive
+    global currentLoopCount, loopStartTime, currentZone, lastStepId, GuiLogBox, verifyFailStartTick
+
+    currentLoopCount++
+    loopStartTime := FormatTime(, "HH:mm:ss")
+    currentZone := "Spawn"
+    lastStepId := 0
+    try {
+        GuiLogBox.Value := "" ; Clear GUI log
+    }
 
     enableRadar := false
     spamETimerActive := false
@@ -462,6 +494,7 @@ RunPath() {
 
     if (!minigameLoaded) {
         LogAction("Safety Check: 'Give Up' button not found. Teleport failed! Restarting...")
+        LogTransaction("FAILED TO JOIN MINIGAME")
         isRunning := false
         ReleaseAllKeys()
         SetTimer(AutoRestartMacro, -1000)
@@ -866,6 +899,7 @@ RunPath() {
         isRunning := false
         ReleaseAllKeys()
         LogAction("Path complete (Nothing found). Auto-restarting loop...")
+        LogTransaction("NOT FOUND")
         ToolTip("Restarting Loop...")
         SetTimer(AutoRestartMacro, -2000)
     }
