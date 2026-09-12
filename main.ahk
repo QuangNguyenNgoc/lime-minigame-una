@@ -33,6 +33,7 @@ global isRunning := false
 global isPaused := false
 global enableRadar := false
 global verifyMinigameActive := false
+global verifyFailStartTick := 0
 global spamETimerActive := false
 global Config := {}
 
@@ -152,7 +153,7 @@ ReleaseAllKeys() {
  * @param stepId  (Optional) ID of the path step for logging
  */
 Walk(keys, ms, stepId := 0) {
-    global isPaused, isRunning, Config, spamETimerActive
+    global verifyFailStartTick, isPaused, isRunning, Config, spamETimerActive
 
     if (!isRunning)
         return
@@ -186,22 +187,30 @@ Walk(keys, ms, stepId := 0) {
                 Send("{" k " down}")
         }
 
-        ; === CONTINUOUS SAFETY CHECK ===
-        if (verifyMinigameActive && !VerifyMinigameState()) {
-            if (spamETimerActive) {
-                LogAction("Minigame ended early (Item collected!). Aborting 12s timer & Restarting...")
-                spamETimerActive := false
-                SetTimer(TickSpamE, 0)
-                SetTimer(StopSpamAndGiveUp, 0) ; Kill the 12s timer
+        ; === CONTINUOUS SAFETY CHECK (With 5-second Tolerance) ===
+        if (verifyMinigameActive) {
+            if (!VerifyMinigameState()) {
+                if (verifyFailStartTick == 0) {
+                    verifyFailStartTick := A_TickCount ; Bắt đầu đếm giờ mất màu
+                } else if (A_TickCount - verifyFailStartTick > 5000) { ; Mất liên tục quá 5 giây mới chốt
+                    if (spamETimerActive) {
+                        LogAction("Minigame ended early (Item collected!). Aborting 12s timer & Restarting...")
+                        spamETimerActive := false
+                        SetTimer(TickSpamE, 0)
+                        SetTimer(StopSpamAndGiveUp, 0) ; Kill the 12s timer
+                    } else {
+                        LogAction("CRITICAL: Minigame lost (Disconnected/Crashed). Aborting...")
+                    }
+                    isRunning := false
+                    for k in keyList
+                        Send("{" k " up}")
+                    ReleaseAllKeys()
+                    SetTimer(AutoRestartMacro, -1000)
+                    return
+                }
             } else {
-                LogAction("CRITICAL: Minigame lost (Disconnected/Crashed). Aborting...")
+                verifyFailStartTick := 0 ; Tìm thấy lại màu -> Reset bộ đếm dung sai
             }
-            isRunning := false
-            for k in keyList
-                Send("{" k " up}")
-            ReleaseAllKeys()
-            SetTimer(AutoRestartMacro, -1000)
-            return
         }
 
         ; === RADAR CHUNK ===
@@ -379,6 +388,7 @@ RunPath() {
     enableRadar := false
     spamETimerActive := false
     verifyMinigameActive := false
+    verifyFailStartTick := 0
     ReleaseAllKeys() ; safe release
 
     ; === ĐẢM BẢO GAME LUÔN FOCUS KHI TỰ ĐỘNG RESTART ===
