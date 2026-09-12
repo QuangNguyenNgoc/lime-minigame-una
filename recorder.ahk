@@ -161,12 +161,6 @@ FlushWalkSegment() {
         if duration > 30
             segments.Push({ type: "walk", keys: currentCombo, ms: duration })
     }
-    ; Nếu không có walk nhưng có khoảng trống (idle), ghi Sleep
-    else {
-        duration := A_TickCount - comboStartTick
-        if duration > 100
-            segments.Push({ type: "sleep", ms: duration })
-    }
 }
 
 BuildCombo() {
