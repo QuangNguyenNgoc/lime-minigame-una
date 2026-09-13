@@ -3,7 +3,7 @@
 
 /*
 ================================================================================
-I Hate Lime - Roblox Minigame Macro v1.1
+I Hate Lime - Roblox Minigame Macro v1.3.1
 ================================================================================
 Author: QuangNguyenNgoc
 License: MIT License
@@ -41,10 +41,8 @@ global currentLoopCount := 0
 global lastStepId := 0
 global Config := {}
 
-; Load configuration on startup
 LoadConfig()
 
-; === GUI ===
 #Include gui.ahk
 
 ; === Functions ===
@@ -106,14 +104,12 @@ StartMacro(*) {
     if isRunning
         return
 
-    ; Auto Focus Roblox
     if WinExist("ahk_exe RobloxPlayerBeta.exe") {
         WinActivate("ahk_exe RobloxPlayerBeta.exe")
     } else if WinExist("Roblox") {
         WinActivate("Roblox")
     }
 
-    ; Thu nhỏ GUI để không vướng màn hình
     WinMinimize(MainGui)
 
     isRunning := true
@@ -129,7 +125,6 @@ PauseMacro(*) {
         return
     isPaused := !isPaused
 
-    ; Hiện lại GUI khi tạm dừng
     if (isPaused)
         WinRestore(MainGui)
 
@@ -140,7 +135,6 @@ PauseMacro(*) {
 StopMacro(*) {
     global isRunning, isPaused, currentLoopCount
 
-    ; Nếu đang chạy dở 1 vòng lặp mà bị ngắt, ghi lại Log Transaction
     if (isRunning && currentLoopCount > 0) {
         LogTransaction("STOPPED (User Aborted)")
     }
@@ -148,7 +142,7 @@ StopMacro(*) {
     isRunning := false
     isPaused := false
     ReleaseAllKeys()
-    ToolTip("⛔ Stopped")
+    ToolTip("Stopped")
     SetTimer(() => ToolTip(), -1000)
     Reload
 }
@@ -180,7 +174,6 @@ Walk(keys, ms, stepId := 0) {
 
     keyList := StrSplit(keys, "+")
 
-    ; Press keys
     for k in keyList
         Send("{" k " down}")
 
@@ -192,7 +185,6 @@ Walk(keys, ms, stepId := 0) {
             return
         }
 
-        ; Pause
         if isPaused {
             pauseTick := A_TickCount
             for k in keyList
@@ -207,7 +199,6 @@ Walk(keys, ms, stepId := 0) {
                 Send("{" k " down}")
         }
 
-        ; === CONTINUOUS SAFETY CHECK ===
         if (verifyMinigameActive && !VerifyMinigameState()) {
             if (spamETimerActive) {
                 LogAction("Minigame ended early (Item collected!). Aborting 12s timer & Restarting...")
@@ -226,7 +217,6 @@ Walk(keys, ms, stepId := 0) {
         }
 
         ; === RADAR CHUNK ===
-        ; Only scan if Radar is enabled and not in SpamE mode
         if (enableRadar && !spamETimerActive && CheckRadar()) {
             LogAction("Radar [XANH] detect")
             LogAction("Radar: HIT at Step " stepId " (Spam 12s)")
@@ -237,7 +227,6 @@ Walk(keys, ms, stepId := 0) {
                 ; TODO: Capture image (Gdip integration later)
             }
 
-            ; Start virtual multi-threaded Spam E timer (character continues pattern)
             StartSpamMode()
         }
         ; ===================
@@ -248,7 +237,7 @@ Walk(keys, ms, stepId := 0) {
     ; Release keys
     for k in keyList
         Send("{" k " up}")
-    Sleep(50)  ; Micro-gap between walk segments
+    Sleep(50)
 
     if (stepId > 0) {
         lastStepId := stepId
@@ -314,7 +303,6 @@ StopSpamAndGiveUp() {
     spamETimerActive := false
     SetTimer(TickSpamE, 0)
 
-    ; Blind click the Give Up button
     MouseMove(Config.GiveUpX, Config.GiveUpY, 3)
     Sleep(500)
     Click()
@@ -323,11 +311,9 @@ StopSpamAndGiveUp() {
     LogAction("Spam 12s Ended: Give Up & Restart")
     LogTransaction("FOUND (Caught Item)")
 
-    ; Cut all running Walk() paths
     isRunning := false
     ReleaseAllKeys()
 
-    ; Wait 1s for safety then auto restart RunPath()
     SetTimer(AutoRestartMacro, -1000)
 }
 
@@ -350,7 +336,6 @@ AlignCameraTopDown() {
     if !isRunning
         return
 
-    ; Bước 1: Lăn chuột vào Góc nhìn thứ nhất
     Loop 20 {
         if !isRunning
             return
@@ -359,7 +344,6 @@ AlignCameraTopDown() {
     }
     Sleep(200)
 
-    ; Bước 2: Kéo chuột nhìn thẳng xuống đất
     Click("Right Down")
     Sleep(100)
     Loop 40 {
@@ -371,7 +355,6 @@ AlignCameraTopDown() {
     Click("Right Up")
     Sleep(200)
 
-    ; Bước 3: Lăn chuột ngược ra
     Loop 8 {
         if !isRunning
             return
@@ -388,13 +371,11 @@ AlignCameraTopDown() {
  */
 VerifyMinigameState() {
     global Config
-    ; Mở rộng vùng tìm kiếm (200x100) quanh toạ độ GiveUpX/Y để đảm bảo bắt trúng toàn bộ nút
     startX := Config.GiveUpX - 50
     startY := Config.GiveUpY - 15
     endX := Config.GiveUpX + 50
     endY := Config.GiveUpY + 15
 
-    ; Variation 70 để bắt mọi tone màu đỏ của nút Give Up (kể cả khi viền nhạt/sáng)
     found := PixelSearch(&outX, &outY, startX, startY, endX, endY, Config.GiveUpColor, 70)
     return found
 }
@@ -410,16 +391,15 @@ RunPath() {
     currentZone := "Spawn"
     lastStepId := 0
     try {
-        GuiLogBox.Value := "" ; Clear GUI log
+        GuiLogBox.Value := ""
     }
 
     enableRadar := false
     spamETimerActive := false
     verifyMinigameActive := false
     verifyFailStartTick := 0
-    ReleaseAllKeys() ; safe release
+    ReleaseAllKeys()
 
-    ; === ĐẢM BẢO GAME LUÔN FOCUS KHI TỰ ĐỘNG RESTART ===
     if WinExist("ahk_exe RobloxPlayerBeta.exe") {
         WinActivate("ahk_exe RobloxPlayerBeta.exe")
     } else if WinExist("Roblox") {
@@ -429,7 +409,7 @@ RunPath() {
 
     ; === SETUP ===
     ; --- Reset character ---
-    Send("{Escape}")       ; ESC
+    Send("{Escape}")
     Sleep(400)
     Send("{r}")
     Sleep(400)
@@ -437,14 +417,14 @@ RunPath() {
     Sleep(1000)
 
     ; --- Camera align ---
-    MouseMove(47, 467, 3)
-    Sleep(400)
+    MouseMove(34, 452, 2)
+    Sleep(100)
     Click("Left")
-    Sleep(400)
-    MouseMove(382, 126, 3)
-    Sleep(400)
+    Sleep(100)
+    MouseMove(387, 129, 2)
+    Sleep(100)
     Click("Left")
-    Sleep(400)
+    Sleep(100)
     AlignCameraTopDown()
 
     ; --- Go to Lime ---
@@ -478,7 +458,7 @@ RunPath() {
     ; --- Wait for Minigame (Polling check up to 5 seconds) ---
     LogAction("Waiting for minigame to load...")
     minigameLoaded := false
-    Loop 50 { ; Chờ tối đa 5 giây (50 * 100ms)
+    Loop 50 { ; 5s
         if (!isRunning)
             return
         if VerifyMinigameState() {
@@ -499,7 +479,6 @@ RunPath() {
     LogAction("Safety Check: Minigame verified.")
     verifyMinigameActive := true
 
-    ; Bù lại khoảng dừng 2 giây gốc để đồng bộ nhịp độ rơi xuống/camera của path di chuyển
     Sleep(2000)
 
     currentZone := "near the donation board"
@@ -616,7 +595,6 @@ RunPath() {
     Walk("s", 1172, 10)
 
     currentZone := "two tree near quest board"
-    ; 1 spot near need to detect
     Walk("w", 266)
     Walk("s+Space", 172)
     Walk("s", 1376)
@@ -920,14 +898,13 @@ RunPath() {
 
 
     ; --- END ---
-
     ; Case 1: Target detected at the very end of the path
     if (spamETimerActive) {
         LogAction("End of path reached. Waiting for 12s Spam to finish...")
         while (spamETimerActive && isRunning) {
             Sleep(100)
         }
-        return ; StopSpamAndGiveUp sẽ làm việc tiếp
+        return
     }
 
     ; Case 2: Walked entire path without detecting anything -> Auto restart
